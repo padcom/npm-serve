@@ -216,7 +216,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
     contentType,
     version: actualVersion,
     location: npm.getArchiveLocation(name, actualVersion, scope),
-    file: file.getArchiveFilename(name, actualVersion, scope),
+    filename: file.getArchiveFilename(name, actualVersion, scope),
     path: actualPath,
   }
 
@@ -225,10 +225,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
     PACKAGE_CACHE[CACHE_KEY].busy = true
     setImmediate(async () => {
       try {
-        const metadata = await npm.fetch(name, scope)
-        const { version, path } = npm.parse(packet, metadata)
-        const location = npm.getArchiveFilename(name, version, scope)
-        await cache.update(name, scope, metadata, location, path)
+        const { metadata } = await npm.update(cache, packet, name, scope)
         console.log('Cache updated successfully for', metadata.name)
       } catch (e) {
         console.log('ERROR: unable to refresh package', CACHE_KEY, ':', e)
@@ -328,25 +325,25 @@ const server = createServer(async (req, res) => {
   } else {
     const packet = url.split('/').slice(2).join('/')
     try {
-      const { scope, name, location, version, path, file, contentType, isDefaultRequest } = await getPacketInfo(packet, args.s)
+      const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, args.s)
       if (isDefaultRequest) {
         res.statusCode = 302
         res.setHeader('access-control-allow-origin', '*')
         res.setHeader('location', `/package/${scope}/${name}@${version}/${path}`)
       } else {
-        if (!exists(file)) {
-          await download(location, file)
+        if (!exists(filename)) {
+          await download(location, filename)
         } else {
-          console.log('File', file, 'already exists - not downloading')
+          console.log('File', filename, 'already exists - not downloading')
         }
         res.setHeader('Content-Type', contentType)
         res.setHeader('Access-Control-Allow-Origin', '*')
         res.setHeader('Cache-Control', 'max-age=30')
-        if (getETagFor(file) === req.headers['if-none-match']) {
+        if (getETagFor(filename) === req.headers['if-none-match']) {
           res.statusCode = 304
         } else {
-          res.setHeader('etag', getETagFor(file))
-          await readPackageFile(path, file, res)
+          res.setHeader('etag', getETagFor(filename))
+          await readPackageFile(path, filename, res)
         }
       }
     } catch (e) {
