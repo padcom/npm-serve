@@ -319,6 +319,7 @@ const server = createServer(async (req, res) => {
     const filename = normalize(`${args.root}${url}`)
     if (exists(filename)) {
       console.log('Serving', filename)
+      res.setHeader('Cache-Control', 'max-age=30')
       const content = await readFile(filename)
       res.write(content)
     } else {
@@ -346,8 +347,10 @@ const server = createServer(async (req, res) => {
         res.setHeader('access-control-allow-origin', '*')
         if (getETagFor(file) === req.headers['if-none-match']) {
           res.statusCode = 304
+          res.setHeader('Cache-Control', 'max-age=30')
         } else {
           res.setHeader('etag', getETagFor(file))
+          res.setHeader('Cache-Control', 'max-age=30')
           await readPackageFile(path, file, res)
         }
       }
