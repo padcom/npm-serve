@@ -319,7 +319,6 @@ const server = createServer(async (req, res) => {
     const filename = normalize(`${args.root}${url}`)
     if (exists(filename)) {
       console.log('Serving', filename)
-      res.setHeader('Cache-Control', 'max-age=30')
       const content = await readFile(filename)
       res.write(content)
     } else {
