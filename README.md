@@ -100,6 +100,14 @@ or if you'd like to import another file from latest version:
   <link rel="stylesheet" href="/package/@padcom/mf-test-library3/dist/style.css">
 ```
 
+### Quick note about deploying non-latest versions
+
+When you want to [deploy a version for a different `tag`](https://docs.npmjs.com/adding-dist-tags-to-packages) (as npm calls them) you need to let npm know about it:
+
+```
+$ npm publish --tag beta
+```
+
 ## Versioning
 
 It'd be not very interesting if we couldn't serve multiple versions of the same package. Luckily we can omit the version all together, in which case `@padcom/npm-server` will take whatever the `latest` version is. If, however, the specified version is one of
