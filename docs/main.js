@@ -1,5 +1,5 @@
 import { events } from '@padcom/mf-test-common'
-import { createApp } from 'vue'
+import { createApp, defineAsyncComponent } from 'vue'
 
 // Vue.js and React require this (simulates dotenv)
 globalThis.process = { env: { NODE_ENV: 'development' } }
@@ -62,10 +62,8 @@ async function startApp(root, url, stylesheets = []) {
   console.log(`[HOST] Dynamically importing ${url} exports...`)
   const { App } = await import(url)
   console.log('[HOST] Exports loaded:')
-  console.log('[HOST] > start =', App)
+  console.log('[HOST] > App =', App)
   console.log('')
-
-  await sleep(1000)
 
   console.log('[HOST] Instantiating microfrontend')
   const app = createApp(App).mount(root)
@@ -86,23 +84,23 @@ async function main() {
   const CDN = 'https://unpkg.com/'
 
   await Promise.all([
-    start(document.getElementById('app1'), CDN + '@padcom/mf-test-library1@0.0.5'),
-    start(document.getElementById('app2'), CDN + '@padcom/mf-test-library2@0.0.2-beta.0'),
-    start(document.getElementById('app3'), CDN + '@padcom/mf-test-library3@0.0.1', CDN + '@padcom/mf-test-library3@0.0.1/dist/style.css'),
-    start(document.getElementById('app4'), CDN + '@padcom/mf-test-library4@0.0.1'),
+    start(document.getElementById('app1'), '@padcom/mf-test-library1'),
+    start(document.getElementById('app2'), '@padcom/mf-test-library2'),
+    start(document.getElementById('app3'), '@padcom/mf-test-library3', CDN + '@padcom/mf-test-library3@0.0.2/dist/style.css'),
+    start(document.getElementById('app4'), '@padcom/mf-test-library4'),
   ])
 
   console.time('[HOST] Instantiating a microfrontend with host-provided and NOT cached dependencies took')
-  await start(document.getElementById('app5'), CDN + '@padcom/mf-test-library5@0.0.6', CDN + '@padcom/mf-test-library5@0.0.6/dist/style.css'),
+  await start(document.getElementById('app5'), '@padcom/mf-test-library5', CDN + '@padcom/mf-test-library5@0.0.8/dist/style.css'),
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and NOT cached dependencies took')
 
   console.time('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
-  const app = await start(document.getElementById('app6'), CDN + '@padcom/mf-test-library6@0.0.4', CDN + '@padcom/mf-test-library6@0.0.4/dist/style.css')
+  const app = await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0.4/dist/style.css')
   console.log('[HOST] Removing last app so it can be instantiated using clickme from library5')
   app.unmount()
   console.log('[HOST] App removed')
   // await start(document.getElementById('app6'), 'http://localhost:3006/index.js', 'http://localhost:3006/style.css'),
-  await start(document.getElementById('app6'), CDN + '@padcom/mf-test-library6@0.0.4', CDN + '@padcom/mf-test-library6@0.0.4/dist/style.css')
+  await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0.4/dist/style.css')
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
 
   window.addEventListener('message', async (event) => {
