@@ -21,7 +21,7 @@ class LocationParser {
    * Example: @padcom/mf-test-library6@0.0.1/dist/index.js
    */
   parse(spec) {
-    const parts = spec.split('/')
+    const parts = spec.split('/').filter(x => x)
     const isScoped = parts[0].startsWith('@')
 
     const scope = isScoped ? parts[0] : ''
