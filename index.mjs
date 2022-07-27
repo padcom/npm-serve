@@ -300,6 +300,53 @@ function getETagFor(file) {
   return createHash('sha1').update(file).digest('hex')
 }
 
+async function servePacket(packet, req, res) {
+  try {
+    const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, args.s)
+    if (isDefaultRequest) {
+      res.statusCode = 302
+      res.setHeader('access-control-allow-origin', '*')
+      res.setHeader('location', `/package/${scope}/${name}@${version}/${path}`)
+    } else {
+      if (!exists(filename)) {
+        await download(location, filename)
+      } else {
+        console.log('File', filename, 'already exists - not downloading')
+      }
+      res.setHeader('Content-Type', contentType)
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Cache-Control', 'max-age=30')
+      if (getETagFor(filename) === req.headers['if-none-match']) {
+        res.statusCode = 304
+      } else {
+        res.setHeader('etag', getETagFor(filename))
+        await readPackageFile(path, filename, res)
+      }
+    }
+  } catch (e) {
+    console.error('ERROR:', e)
+    if (e.code && e.error) {
+      res.statusCode = e.code
+      res.statusMessage = e.error
+    } else {
+      res.statusCode = 500
+      res.statusMessage = 'Unknown error + "' + e + '"'
+    }
+  }
+}
+
+async function serveFile(res, url) {
+  res.setHeader('Content-Type', mime.getType(url))
+  const filename = normalize(`${args.root}${url}`)
+  if (exists(filename)) {
+    console.log('Serving', filename)
+    const content = await readFile(filename)
+    res.write(content)
+  } else {
+    console.log('ERROR:', filename, 'not found')
+  }
+}
+
 const server = createServer(async (req, res) => {
   if (!['GET', 'OPTIONS'].includes(req.method)) {
     res.statusCode = 404
@@ -309,53 +356,12 @@ const server = createServer(async (req, res) => {
   let url = req.url
   if (url === '/') url = '/index.html'
   if (!url.startsWith('/package/')) {
-    res.setHeader('Content-Type', mime.getType(url))
-    const filename = normalize(`${args.root}${url}`)
-    if (exists(filename)) {
-      console.log('Serving', filename)
-      const content = await readFile(filename)
-      res.write(content)
-    } else {
-      console.log('ERROR:', filename, 'not found')
-    }
-  } else if (!url.startsWith('/package/')) {
-    res.write('Not a packet request')
+    await serveFile(res, url)
   } else if (url.length < '/package/ '.length) {
     res.write('Invalid packet specification')
   } else {
     const packet = url.split('/').slice(2).join('/')
-    try {
-      const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, args.s)
-      if (isDefaultRequest) {
-        res.statusCode = 302
-        res.setHeader('access-control-allow-origin', '*')
-        res.setHeader('location', `/package/${scope}/${name}@${version}/${path}`)
-      } else {
-        if (!exists(filename)) {
-          await download(location, filename)
-        } else {
-          console.log('File', filename, 'already exists - not downloading')
-        }
-        res.setHeader('Content-Type', contentType)
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader('Cache-Control', 'max-age=30')
-        if (getETagFor(filename) === req.headers['if-none-match']) {
-          res.statusCode = 304
-        } else {
-          res.setHeader('etag', getETagFor(filename))
-          await readPackageFile(path, filename, res)
-        }
-      }
-    } catch (e) {
-      console.error('ERROR:', e)
-      if (e.code && e.error) {
-        res.statusCode = e.code
-        res.statusMessage = e.error
-      } else {
-        res.statusCode = 500
-        res.statusMessage = 'Unknown error + "' + e + '"'
-      }
-    }
+    await servePacket(packet, req, res)
   }
   res.end()
 })
