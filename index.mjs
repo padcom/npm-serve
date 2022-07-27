@@ -13,8 +13,11 @@ import minimist from 'minimist'
 
 const args = minimist(process.argv.slice(2))
 args.p ||= 2998
-args.s ||= './packages'
+args.s = normalize(args.s || './packages')
 args.root = normalize(args._[0] || '.')
+
+await mkdir(args.s, { recursive: true })
+console.log('args.s', args.s)
 
 class LocationParser {
   /**
@@ -302,7 +305,7 @@ function getETagFor(file) {
 
 async function servePacket(packet, req, res) {
   try {
-    const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, args.s)
+    const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, { storage: args.s })
     if (isDefaultRequest) {
       res.statusCode = 302
       res.setHeader('access-control-allow-origin', '*')

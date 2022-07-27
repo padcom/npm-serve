@@ -124,7 +124,7 @@ When starting `@padcom/npm-serve` there are several options that you can use to 
 
 ### `-s location`
 
-`-s location` tells the application where to store cached packages (doesn't work right now, always uses `$(cwd)/packages`)
+`-s location` tells the application where to store cached packages
 
 ### `-p port`
 
@@ -173,3 +173,12 @@ Initially the idea of [microfrontends](https://micro-frontends.org/), created by
 - If you really must be specific use a label (`latest`, `beta`) instead of a specific version
 - If speed is what you have the need for then use full version with full path to the exported files; it'll limit the number of 302 responses
 
+## Examples
+
+[Microfrontends with Vue and React](https://github.com/padcom/importmap-vue3-react-mf-example) Multiple external libraries, common library, host.
+
+To use this example cd to the `host` folder and issue the following command:
+
+```
+$ npx @padcom/npm-serve .
+```
