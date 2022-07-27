@@ -343,13 +343,12 @@ const server = createServer(async (req, res) => {
           console.log('File', file, 'already exists - not downloading')
         }
         res.setHeader('Content-Type', contentType)
-        res.setHeader('access-control-allow-origin', '*')
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Cache-Control', 'max-age=30')
         if (getETagFor(file) === req.headers['if-none-match']) {
           res.statusCode = 304
-          res.setHeader('Cache-Control', 'max-age=30')
         } else {
           res.setHeader('etag', getETagFor(file))
-          res.setHeader('Cache-Control', 'max-age=30')
           await readPackageFile(path, file, res)
         }
       }
