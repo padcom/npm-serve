@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { dirname, extname, normalize } from 'node:path'
 import { createReadStream, createWriteStream, existsSync as exists } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import https from 'node:https'
 import { createServer } from 'http'
 import zlib from 'node:zlib'
@@ -15,9 +15,6 @@ const args = minimist(process.argv.slice(2))
 args.p ||= 2998
 args.s = normalize(args.s || './packages')
 args.root = normalize(args._[0] || '.')
-
-await mkdir(args.s, { recursive: true })
-console.log('args.s', args.s)
 
 class LocationParser {
   /**
@@ -299,8 +296,9 @@ function readPackageFile(path, file, target) {
   })
 }
 
-function getETagFor(file) {
-  return createHash('sha1').update(file).digest('hex')
+async function getETagFor(file) {
+  const stats = await stat(file)
+  return createHash('sha1').update(stats.mtime.toISOString()).digest('hex')
 }
 
 async function servePacket(packet, req, res) {
@@ -322,7 +320,7 @@ async function servePacket(packet, req, res) {
       if (getETagFor(filename) === req.headers['if-none-match']) {
         res.statusCode = 304
       } else {
-        res.setHeader('etag', getETagFor(filename))
+        res.setHeader('etag', await getETagFor(filename))
         await readPackageFile(path, filename, res)
       }
     }
@@ -338,14 +336,19 @@ async function servePacket(packet, req, res) {
   }
 }
 
-async function serveFile(res, url) {
+async function serveFile(req, res, url) {
   res.setHeader('Content-Type', mime.getType(url))
   const filename = normalize(`${args.root}${url}`)
   if (exists(filename)) {
     console.log('Serving', filename)
-    const content = await readFile(filename)
-    res.write(content)
-  } else {
+    if (getETagFor(filename) === req.headers['if-none-match']) {
+      res.statusCode = 304
+    } else {
+      res.setHeader('etag', await getETagFor(filename))
+      const content = await readFile(filename)
+      res.write(content)
+    }
+} else {
     console.log('ERROR:', filename, 'not found')
   }
 }
@@ -359,7 +362,7 @@ const server = createServer(async (req, res) => {
   let url = req.url
   if (url === '/') url = '/index.html'
   if (!url.startsWith('/package/')) {
-    await serveFile(res, url)
+    await serveFile(req, res, url)
   } else if (url.length < '/package/ '.length) {
     res.write('Invalid packet specification')
   } else {
