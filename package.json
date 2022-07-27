@@ -24,7 +24,7 @@
   "npm-serve": "index.mjs"
  },
  "scripts": {
-  "start": "node index.mjs",
+  "start": "node index.mjs docs",
   "prepublishOnly": "npm install"
  },
  "dependencies": {

@@ -10,6 +10,7 @@ import zlib from 'node:zlib'
 import tar from 'tar-stream'
 import mime from 'mime'
 import minimist from 'minimist'
+import { Writable } from 'node:stream'
 
 const args = minimist(process.argv.slice(2))
 args.p ||= 2998
@@ -255,22 +256,32 @@ async function download(location, file) {
   })
 }
 
-function readPackageFile(path, file, target) {
+/**
+ * This function opens up the given `file` archige (.tgz), iterates
+ * over the files inside it and if it finds the `package/${path}`
+ * then it is streamed to `target`
+ *
+ * @param {String} archive filename of the archive
+ * @param {String} path filename to extract from the archive
+ * @param {Writable} output writable stream to write the content of the file to
+ * @returns {Promise<void>} an empty promise when the content has been streamed to output
+ */
+function streamArchiveFile(archive, path, output) {
   return new Promise((resolve, reject) => {
-    const normalized = normalize(`./package/${path}`)
+    const normalized = normalize(`package/${path}`)
 
     const extract = tar.extract()
     extract.on('error', reject)
     extract.on('entry', (header, stream, next) => {
       if (header.name === normalized) {
         console.log('File', normalized, 'found - streaming')
-        stream.pipe(target)
+        stream.pipe(output)
       }
       stream.on('end', () => {
         if (header.name === normalized) {
           console.log('File', normalized, 'has been transferred successfully')
           extract.end()
-          resolve({ path, file })
+          resolve()
         } else {
           console.log('Skipping', header.name)
           next()
@@ -280,18 +291,17 @@ function readPackageFile(path, file, target) {
       stream.resume()
     })
     extract.on('finish', () => {
-      console.log('extract.on("finish")', file)
+      console.log('extract.on("finish")', archive)
       reject({ code: 404, error: 'Not found (in archive)' })
     })
 
     const gunzip = zlib.createGunzip()
     gunzip.on('error', reject)
-    // gunzip.on('end', () => reject({ code: 404, error: 'Not found (in archive)' }))
 
-    const source = createReadStream(file)
+    const source = createReadStream(archive)
     source.on('error', reject)
 
-    console.log('Extracting', normalized, 'from', file)
+    console.log('Extracting', normalized, 'from', archive)
     source.pipe(gunzip).pipe(extract)
   })
 }
@@ -321,7 +331,7 @@ async function servePacket(packet, req, res) {
         res.statusCode = 304
       } else {
         res.setHeader('etag', await getETagFor(filename))
-        await readPackageFile(path, filename, res)
+        await streamArchiveFile(filename, path, res)
       }
     }
   } catch (e) {
