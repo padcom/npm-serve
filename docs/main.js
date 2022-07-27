@@ -86,7 +86,7 @@ async function main() {
   const CDN = 'https://unpkg.com/'
 
   await Promise.all([
-    start(document.getElementById('app1'), CDN + '@padcom/mf-test-library1@0.0.4'),
+    start(document.getElementById('app1'), CDN + '@padcom/mf-test-library1@0.0.5'),
     start(document.getElementById('app2'), CDN + '@padcom/mf-test-library2@0.0.2-beta.0'),
     start(document.getElementById('app3'), CDN + '@padcom/mf-test-library3@0.0.1', CDN + '@padcom/mf-test-library3@0.0.1/dist/style.css'),
     start(document.getElementById('app4'), CDN + '@padcom/mf-test-library4@0.0.1'),
