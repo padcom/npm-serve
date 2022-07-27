@@ -45,8 +45,8 @@ class MetadataProvider {
     throw new Error('Not implemented')
   }
 
-  getDefaultPacketVersion(metadata) {
-    return metadata['dist-tags'].latest
+  getDefaultPacketVersion(metadata, version = 'latest') {
+    return metadata['dist-tags'][version]
   }
 
   getDefaultPacketExport(metadata, version) {
@@ -92,7 +92,10 @@ class MetadataProvider {
     }
 
     const { version: requestedVersion, path: requestedPath } = new LocationParser().parse(packet)
-    const version = requestedVersion || this.getDefaultPacketVersion(metadata)
+    const isLabelVersion = version => ['', 'latest', 'next', 'beta', 'alpha'].includes(version)
+    const version = isLabelVersion(requestedVersion)
+      ? this.getDefaultPacketVersion(metadata, requestedVersion)
+      : requestedVersion || this.getDefaultPacketVersion(metadata)
     const defaultExport = this.getDefaultPacketExport(metadata, version)
     if (!requestedPath && !defaultExport) {
       throw { code: 422, error: 'package.json/main field is empty!' }
