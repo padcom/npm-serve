@@ -101,12 +101,6 @@ class MetadataProvider {
       throw { code: 422, error: 'package.json/main field is empty!' }
     }
     const path = normalize(requestedPath || defaultExport)
-    // console.log('latest version:', getDefaultPacketVersion(metadata))
-    // console.log('scope:', scope)
-    // console.log('name:', name, 'version:', version)
-    // console.log('url of the package:', `https://registry.npmjs.org/${scope}/${name}/-/${name}-${version}.tgz`)
-    // console.log('version "' + version + '"')
-    // console.log('entrypoint', metadata.versions[version]?.main)
 
     return { version, metadata, path }
   }
