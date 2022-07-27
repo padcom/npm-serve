@@ -1,11 +1,23 @@
 # npm-serve
 
+File and npm package server.
+
 ## TL;DR;
 
 Issue the following command to use it:
 
 ```
 $ npx @padcom/npm-serve .
+```
+
+or if you're a [Docker](https://www.docker.com/) fan:
+
+```
+$ docker run --rm -it \
+  --name=npm-serve \
+  -p 2998:2998 \
+  -v $(pwd):/var/lib/npm-serve/static-files \
+  padcom/npm-serve
 ```
 
 ## A bit of history
