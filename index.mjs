@@ -14,11 +14,13 @@ import { Writable } from 'node:stream'
 import pkg from './package.json' assert { type: 'json' }
 import semver from 'semver'
 import { IncomingMessage, ServerResponse } from 'node:http'
+import chalk from 'chalk'
 
 const args = minimist(process.argv.slice(2))
 args.port = args.p || args.port || 2998
 args.storage = args.s || args.storage || './packages'
 args.registry = args.r || args.registry || 'https://registry.npmjs.org'
+args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
 
 if (args.h || args.help) {
@@ -34,6 +36,72 @@ if (args.V || args.version) {
   console.log(pkg.version)
   process.exit(0)
 }
+
+class Logger {
+  static LEVELS = {
+    trace:    4,
+    debug:    3,
+    info:     2,
+    warn:     1,
+    error:    0,
+  }
+
+  static LEVEL_COLORS = {
+    trace:    chalk.dim.gray,
+    debug:    chalk.dim.gray,
+    info:     s => s,
+    warn:     chalk.yellow,
+    error:    chalk.red,
+  }
+
+  static CONTENT_COLORS = {
+    trace:    chalk.dim.gray,
+    debug:    chalk.dim.gray,
+    info:     s => s,
+    warn:     s => s,
+    error:    s => s,
+  }
+
+  #level
+
+  constructor(level = 'info') {
+    if (!Logger.LEVELS[level]) {
+      console.log('WARN: Given loglevel', level, 'is invalid. Reverting to "info"')
+    }
+    this.#level = Logger.LEVELS[level] || 'info'
+  }
+
+  #log(level, ...args) {
+    const parts = [
+      chalk.bold(new Date().toISOString()),
+      chalk.cyan('[') + Logger.LEVEL_COLORS[level](level.padEnd(5)) + chalk.cyan(']'),
+      Logger.CONTENT_COLORS[level](...args)
+    ]
+    console.log(...parts)
+  }
+
+  trace(...args) {
+    if (this.#level >= Logger.LEVELS.trace) this.#log('trace', ...args)
+  }
+
+  debug(...args) {
+    if (this.#level >= Logger.LEVELS.debug) this.#log('debug', ...args)
+  }
+
+  info(...args) {
+    if (this.#level >= Logger.LEVELS.info) this.#log('info', ...args)
+  }
+
+  warn(...args) {
+    if (this.#level >= Logger.LEVELS.warn) this.#log('warn', ...args)
+  }
+
+  error(...args) {
+    if (this.#level >= Logger.LEVELS.error) this.#log('error', ...args)
+  }
+}
+
+const logger = new Logger(args.loglevel)
 
 class LocationParser {
   /**
@@ -247,14 +315,14 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
   }
 
   function scheduleCacheRefresh(name, scope = '') {
-    console.log('[info]  Scheduling refresh of', scope, name)
+    logger.info('Scheduling refresh of', scope, name)
     PACKAGE_CACHE[CACHE_KEY].busy = true
     setImmediate(async () => {
       try {
         const { metadata } = await npm.update(cache, packet, name, scope)
-        console.log('[info]  Cache updated successfully for', metadata.name)
+        logger.info('Cache updated successfully for', metadata.name)
       } catch (e) {
-        console.log('[error] unable to refresh package', CACHE_KEY, ':', e)
+        logger.error('unable to refresh package', CACHE_KEY, ':', e)
       }
     })
   }
@@ -268,17 +336,17 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
  * @returns {Promise<void>} an empty promise when the file has been retrieved
  */
 async function download(location, file) {
-  console.log('[debug] Downloading file', location, 'to', file)
+  logger.debug('Downloading file', location, 'to', file)
   return new Promise((resolve, reject) => {
     https.get(location, async (res) => {
       if (res.statusCode !== 200) {
         reject({ code: 404, error: 'Not found' })
       } else {
-        console.log('[trace] Writing file', file)
+        logger.trace('Writing file', file)
         const folder = dirname(file)
         if (!exists(folder)) await mkdir(folder, { recursive: true })
         res.on('end', () => {
-          console.log('[debug] File', location, 'downloaded to', file)
+          logger.debug('File', location, 'downloaded to', file)
           resolve()
         })
         res.on('error', reject)
@@ -306,16 +374,16 @@ function streamArchiveFile(archive, path, output) {
     extract.on('error', reject)
     extract.on('entry', (header, stream, next) => {
       if (header.name === normalized) {
-        console.log('[trace] File', normalized, 'found - streaming')
+        logger.trace('File', normalized, 'found - streaming')
         stream.pipe(output)
       }
       stream.on('end', () => {
         if (header.name === normalized) {
-          console.log('[trace] File', normalized, 'has been transferred successfully')
+          logger.trace('File', normalized, 'has been transferred successfully')
           extract.end()
           resolve()
         } else {
-          console.log('[trace] Skipping', header.name)
+          logger.trace('Skipping', header.name)
           next()
         }
       })
@@ -332,7 +400,7 @@ function streamArchiveFile(archive, path, output) {
     const source = createReadStream(archive)
     source.on('error', reject)
 
-    console.log('[info]  Extracting', normalized, 'from', archive)
+    logger.info(`HTTP/1.1 GET - ${archive}/${normalized}`)
     source.pipe(gunzip).pipe(extract)
   })
 }
@@ -353,7 +421,7 @@ async function servePacket(packet, req, res) {
       if (!exists(filename)) {
         await download(location, filename)
       } else {
-        console.log('[info]  File', filename, 'already exists - not downloading')
+        logger.debug('File', filename, 'already exists - not downloading')
       }
       res.setHeader('Content-Type', contentType)
       res.setHeader('Access-Control-Allow-Origin', '*')
@@ -449,7 +517,7 @@ async function serveFile(req, res) {
 
   const filename = normalize(`${args.documentRoot}/${path}`)
   if (exists(filename)) {
-    console.log('[info]  Serving', filename)
+    logger.info('HTTP/1.1 GET -', filename)
     if (getETagFor(filename) === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
@@ -461,7 +529,7 @@ async function serveFile(req, res) {
       res.write(content)
     }
   } else {
-    console.log('[error]', filename, 'not found')
+    logger.error(filename, 'not found')
   }
 }
 
@@ -489,4 +557,5 @@ const listener = server.listen(args.port, () => {
   console.log('  * configured storage:', args.storage)
   console.log('  * fetching packages from:', args.registry)
   console.log('  * serving static files from:', args.documentRoot)
+  console.log('')
 })

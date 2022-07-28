@@ -24,10 +24,11 @@
   "npm-serve": "index.mjs"
  },
  "scripts": {
-  "start": "node index.mjs docs",
+  "start": "node index.mjs --loglevel trace docs",
   "prepublishOnly": "npm install"
  },
  "dependencies": {
+  "chalk": "^5.0.1",
   "mime": "^3.0.0",
   "minimist": "^1.2.6",
   "semver": "^7.3.7",
