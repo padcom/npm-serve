@@ -13,9 +13,10 @@ import minimist from 'minimist'
 import { Writable } from 'node:stream'
 
 const args = minimist(process.argv.slice(2))
-args.p ||= 2998
-args.s = normalize(args.s || './packages')
-args.root = normalize(args._[0] || '.')
+args.port = args.p || args.port || 2998
+args.storage = args.s || args.storage || './packages'
+args.registry = args.c || args.registry || 'https://registry.npmjs.org'
+args.documentRoot = args._[0] || '.'
 
 class LocationParser {
   /**
@@ -68,9 +69,9 @@ class MetadataProvider {
 
   getArchiveLocation(name, version, scope = '') {
     if (scope) {
-      return `https://registry.npmjs.org/${scope}/${name}/-/${name}-${version}.tgz`
+      return `${args.registry}/${scope}/${name}/-/${name}-${version}.tgz`
     } else {
-      return `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`
+      return `${args.registry}/${name}/-/${name}-${version}.tgz`
     }
   }
 
@@ -313,7 +314,7 @@ async function getETagFor(file) {
 
 async function servePacket(packet, req, res) {
   try {
-    const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, { storage: args.s })
+    const { scope, name, location, version, path, filename, contentType, isDefaultRequest } = await getPacketInfo(packet, { storage: args.storage })
     if (isDefaultRequest) {
       res.statusCode = 302
       res.setHeader('access-control-allow-origin', '*')
@@ -348,7 +349,7 @@ async function servePacket(packet, req, res) {
 
 async function serveFile(req, res, url) {
   res.setHeader('Content-Type', mime.getType(url))
-  const filename = normalize(`${args.root}${url}`)
+  const filename = normalize(`${args.documentRoot}${url}`)
   if (exists(filename)) {
     console.log('Serving', filename)
     if (getETagFor(filename) === req.headers['if-none-match']) {
@@ -382,6 +383,9 @@ const server = createServer(async (req, res) => {
   res.end()
 })
 
-const listener = server.listen(args.p, () => {
-  console.log('Server listening on', listener.address(), 'with storage', args.s, 'and root', args.root)
+const listener = server.listen(args.port, () => {
+  console.log('Server listening on', listener.address()),
+  console.log('  * configured storage:', args.storage)
+  console.log('  * serving static files from', args.documentRoot)
+  console.log('  * fetching packages from', args.registry)
 })
