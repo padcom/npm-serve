@@ -246,14 +246,14 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
   }
 
   function scheduleCacheRefresh(name, scope = '') {
-    console.log('Scheduling refresh of', scope, name)
+    console.log('[info]  Scheduling refresh of', scope, name)
     PACKAGE_CACHE[CACHE_KEY].busy = true
     setImmediate(async () => {
       try {
         const { metadata } = await npm.update(cache, packet, name, scope)
-        console.log('Cache updated successfully for', metadata.name)
+        console.log('[info]  Cache updated successfully for', metadata.name)
       } catch (e) {
-        console.log('ERROR: unable to refresh package', CACHE_KEY, ':', e)
+        console.log('[error] unable to refresh package', CACHE_KEY, ':', e)
       }
     })
   }
@@ -267,17 +267,17 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
  * @returns {Promise<void>} an empty promise when the file has been retrieved
  */
 async function download(location, file) {
-  console.log('Downloading file', location, 'to', file)
+  console.log('[debug] Downloading file', location, 'to', file)
   return new Promise((resolve, reject) => {
     https.get(location, async (res) => {
       if (res.statusCode !== 200) {
         reject({ code: 404, error: 'Not found' })
       } else {
-        console.log('Writing file', file)
+        console.log('[trace] Writing file', file)
         const folder = dirname(file)
         if (!exists(folder)) await mkdir(folder, { recursive: true })
         res.on('end', () => {
-          console.log('File', location, 'downloaded to', file)
+          console.log('[debug] File', location, 'downloaded to', file)
           resolve()
         })
         res.on('error', reject)
@@ -305,16 +305,16 @@ function streamArchiveFile(archive, path, output) {
     extract.on('error', reject)
     extract.on('entry', (header, stream, next) => {
       if (header.name === normalized) {
-        console.log('File', normalized, 'found - streaming')
+        console.log('[trace] File', normalized, 'found - streaming')
         stream.pipe(output)
       }
       stream.on('end', () => {
         if (header.name === normalized) {
-          console.log('File', normalized, 'has been transferred successfully')
+          console.log('[trace] File', normalized, 'has been transferred successfully')
           extract.end()
           resolve()
         } else {
-          console.log('Skipping', header.name)
+          console.log('[trace] Skipping', header.name)
           next()
         }
       })
@@ -322,7 +322,6 @@ function streamArchiveFile(archive, path, output) {
       stream.resume()
     })
     extract.on('finish', () => {
-      console.log('extract.on("finish")', archive)
       reject({ code: 404, error: 'Not found (in archive)' })
     })
 
@@ -332,7 +331,7 @@ function streamArchiveFile(archive, path, output) {
     const source = createReadStream(archive)
     source.on('error', reject)
 
-    console.log('Extracting', normalized, 'from', archive)
+    console.log('[info]  Extracting', normalized, 'from', archive)
     source.pipe(gunzip).pipe(extract)
   })
 }
@@ -353,7 +352,7 @@ async function servePacket(packet, req, res) {
       if (!exists(filename)) {
         await download(location, filename)
       } else {
-        console.log('File', filename, 'already exists - not downloading')
+        console.log('[info]  File', filename, 'already exists - not downloading')
       }
       res.setHeader('Content-Type', contentType)
       res.setHeader('Access-Control-Allow-Origin', '*')
@@ -381,7 +380,7 @@ async function serveFile(req, res, url) {
   res.setHeader('Content-Type', mime.getType(url))
   const filename = normalize(`${args.documentRoot}${url}`)
   if (exists(filename)) {
-    console.log('Serving', filename)
+    console.log('[info]  Serving', filename)
     if (getETagFor(filename) === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
@@ -390,7 +389,7 @@ async function serveFile(req, res, url) {
       res.write(content)
     }
 } else {
-    console.log('ERROR:', filename, 'not found')
+    console.log('[error]', filename, 'not found')
   }
 }
 
