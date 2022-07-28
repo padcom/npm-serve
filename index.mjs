@@ -53,7 +53,7 @@ class Logger {
   static LEVEL_COLORS = {
     trace:    chalk.dim.gray,
     debug:    chalk.dim.gray,
-    info:     (...args) => [...args],
+    info:     chalk.gray,
     warn:     chalk.yellow,
     error:    chalk.red,
   }
@@ -61,9 +61,9 @@ class Logger {
   static CONTENT_COLORS = {
     trace:    chalk.dim.gray,
     debug:    chalk.dim.gray,
-    info:     (...args) => [...args],
-    warn:     (...args) => [...args],
-    error:    (...args) => [...args],
+    info:     chalk.reset,
+    warn:     chalk.reset,
+    error:    chalk.reset,
   }
 
   #level
@@ -77,10 +77,11 @@ class Logger {
 
   #log(level, ...args) {
     if (this.#level >= Logger.LEVELS[level]) {
+      args = args.length > 1 ? Logger.CONTENT_COLORS[level](...args) : Logger.CONTENT_COLORS[level](args)
       const parts = [
         chalk.bold(new Date().toISOString()),
         chalk.cyan('[') + Logger.LEVEL_COLORS[level](level.padEnd(5)) + chalk.cyan(']'),
-        ...Logger.CONTENT_COLORS[level](...args)
+        args
       ]
       printalws(...parts)
     }
@@ -440,7 +441,7 @@ async function servePacket(packet, req, res) {
       }
     }
   } catch (e) {
-    logger.error('ERROR:', e)
+    logger.error(e)
     if (e.code && e.error) {
       res.statusCode = e.code
       res.statusMessage = e.error
@@ -564,4 +565,5 @@ const listener = server.listen(args.port, () => {
   print('  * fetching packages from: ', args.registry)
   print('  * serving static files from: ', args.documentRoot)
   print('')
+  logger.info('Server started')
 })
