@@ -174,6 +174,40 @@ Initially the idea of [microfrontends](https://micro-frontends.org/), created by
 - If you want to limit the number of possible versions (e.g. all lower than 3.0 but higer than 2.0) omit the part of version that you want the service to fill in automatically
 - If speed is what you have the need for then use full version with full path to the exported files; it'll limit the number of 302 responses
 
+## Substitutions
+
+This is probably one of the more powerful features of `@padcom/npm-serve`. Let's examine the following scenarios
+
+### Local development
+
+> As a developer I want to work on part of the application that needs changes
+
+In this case you probably want _all_ modules served from the registry besides one or more packages that are served locally. To achieve that navigate to:
+
+http://localhost:2998?@scope/package=http://localhost:3009
+
+where `@scope/package` is the package you want to substitute (@scope is mandatory for scoped packages) and `http://localhost:3009` is the local development server address.
+
+This will substitute everything in the locally served static files.
+
+### Using beta versions
+
+> As a user I want to check out the latest beta version of a specific part of the system
+
+In this case you probably want _all_ modules served from the registry but one of those needs to have a version that you need:
+
+http://localhost:2998?@scope/package=0.0.2-beta
+
+where `@scope/package` is the package you want to substitute (`@scope` is mandatory for scoped packages) and `0.0.2-beta` is the coordinate to the tag `beta` of version `0.0.2`.
+
+This will substitute everything in the locally served static files setting the version to `0.0.2-beta`. Since `@padcom/npm-serve` is clever enough to know how to decode the `beta` version you will end up with the latest beta release for the given version, e.g. `@scope/package=0.0.2-beta.1`
+
+### Remarks
+
+The substitutions happen against the https://unpkg.com CDN. That means if you want those substitutions to work your initial definitions in `index.html` or connected javascript modules need to refer to the CDN.
+
+Check out the example [index.html](https://github.com/padcom/npm-serve/blob/master/docs/index.html) and [main.js](https://github.com/padcom/npm-serve/blob/master/docs/main.js)
+
 ## Examples
 
 [Microfrontends with Vue and React](https://github.com/padcom/importmap-vue3-react-mf-example) Multiple external libraries, common library, host.
