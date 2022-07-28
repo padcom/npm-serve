@@ -1,6 +1,6 @@
 {
  "name": "@padcom/npm-serve",
- "version": "0.0.20",
+ "version": "0.0.21",
  "author": "Matthias Hryniszak <padcom@gmail.com>",
  "license": "Apache-2.0",
  "type": "module",
