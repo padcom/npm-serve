@@ -26,7 +26,7 @@ args.documentRoot = args._[0] || '.'
 if (args.h || args.help) {
   console.log(`@padcom/npm-serve by ${pkg.author}`)
   console.log(`usage:`)
-  console.log(`  ${pkg.name} [-s storage] [-r registry] [-p port] [document_root]`)
+  console.log(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
   console.log(`  ${pkg.name} -V | --version # show program version and exit`)
   console.log(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
