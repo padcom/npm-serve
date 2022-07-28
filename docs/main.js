@@ -1,23 +1,9 @@
-import { events } from '@padcom/mf-test-common'
 import { createApp } from 'vue'
-
+import { events } from '@padcom/mf-test-common'
 import {
-  registerLibraryStylesheet,
-  getLibraryMetadata,
-  isLibraryRegistered,
-  loadStylesheetsFromLibrary,
+  isLibraryRegistered, getLibraryMetadata,
+  registerLibraryStylesheet, loadStylesheetsFromLibrary,
 } from '@padcom/npm-serve'
-
-registerLibraryStylesheet('@padcom/mf-test-library3', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library5', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library6', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library7', 'dist/style.css')
-
-// Vue.js and React require this (simulates dotenv)
-globalThis.process = { env: { NODE_ENV: 'development' } }
-// Vue.js requires this (silents console warnings)
-globalThis.__VUE_OPTIONS_API__ = false
-globalThis.__VUE_PROD_DEVTOOLS__ = false
 
 async function start(root, library) {
   if (!isLibraryRegistered(library)) throw new Error('Unknown library', library)
@@ -104,5 +90,16 @@ async function main() {
 
   console.timeEnd('[HOST] System initialized.')
 }
+
+// Vue.js and React require this (simulates dotenv)
+globalThis.process = { env: { NODE_ENV: 'development' } }
+// Vue.js requires this (silents console warnings)
+globalThis.__VUE_OPTIONS_API__ = false
+globalThis.__VUE_PROD_DEVTOOLS__ = false
+
+registerLibraryStylesheet('@padcom/mf-test-library3', 'dist/style.css')
+registerLibraryStylesheet('@padcom/mf-test-library5', 'dist/style.css')
+registerLibraryStylesheet('@padcom/mf-test-library6', 'dist/style.css')
+registerLibraryStylesheet('@padcom/mf-test-library7', 'dist/style.css')
 
 main()
