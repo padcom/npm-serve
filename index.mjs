@@ -554,11 +554,14 @@ const server = createServer(async (req, res) => {
 })
 
 const listener = server.listen(args.port, () => {
+  const messages = [
+    'Server listening on', listener.address(),
+    '  * configured storage:', args.storage,
+    '  * fetching packages from:', args.registry,
+    '  * serving static files from:', args.documentRoot,
+  ]
   if (!args.quiet) {
-    console.log('Server listening on', listener.address()),
-    console.log('  * configured storage:', args.storage)
-    console.log('  * fetching packages from:', args.registry)
-    console.log('  * serving static files from:', args.documentRoot)
+    console.log(messages.join('\n'))
     console.log('')
   }
 })
