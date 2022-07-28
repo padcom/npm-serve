@@ -51,7 +51,7 @@ for (const [library, origin] of Object.entries(LIBRARIES)) {
   const isAbsoluteOrigin = origin.startsWith('http://') || origin.startsWith('https://')
   const isDevelopment = origin.startsWith('http://localhost:')
   const url = new URL(isAbsoluteOrigin ? origin : window.location.origin + origin)
-  const cdn = isDevelopment ? url.origin : isAbsoluteOrigin ? origin : '/package'
+  const cdn = isAbsoluteOrigin ? url.origin : '/package'
   const prefixLength = isAbsoluteOrigin ? 0 : 1
   const npm = isDevelopment ? parseNpmCoords(library) : parseNpmCoords(url.pathname, prefixLength)
 
