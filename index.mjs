@@ -401,6 +401,6 @@ const server = createServer(async (req, res) => {
 const listener = server.listen(args.port, () => {
   console.log('Server listening on', listener.address()),
   console.log('  * configured storage:', args.storage)
-  console.log('  * serving static files from', args.documentRoot)
-  console.log('  * fetching packages from', args.registry)
+  console.log('  * fetching packages from:', args.registry)
+  console.log('  * serving static files from:', args.documentRoot)
 })
