@@ -171,6 +171,7 @@ Initially the idea of [microfrontends](https://micro-frontends.org/), created by
 - If you don't have a very specific case don't use custom components as wrappers for microfrontends
 - If you're all set on one framework (and that better be Vue.js :D) then export components from microfrontends. Vue has some exciting features for [async components](https://vuejs.org/guide/components/async.html)!
 - If you really must be specific use a label (`latest`, `beta`) instead of a specific version
+- If you want to limit the number of possible versions (e.g. all lower than 3.0 but higer than 2.0) omit the part of version that you want the service to fill in automatically
 - If speed is what you have the need for then use full version with full path to the exported files; it'll limit the number of 302 responses
 
 ## Examples
