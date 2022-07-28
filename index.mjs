@@ -30,7 +30,7 @@ const printalws = console.log
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
   printalws(`usage:`)
-  printalws(`  ${pkg.name} [-q] [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
+  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [document_root] [-q]`)
   printalws(`  ${pkg.name} -V | --version # show program version and exit`)
   printalws(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
