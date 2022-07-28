@@ -12,6 +12,7 @@ import mime from 'mime'
 import minimist from 'minimist'
 import { Writable } from 'node:stream'
 import pkg from './package.json' assert { type: 'json' }
+import semver from 'semver'
 
 const args = minimist(process.argv.slice(2))
 args.port = args.p || args.port || 2998
@@ -64,8 +65,14 @@ class MetadataProvider {
     throw new Error('Not implemented')
   }
 
-  getDefaultPacketVersion(metadata, version = 'latest') {
-    return metadata['dist-tags'][version]
+  getPacketVersion(metadata, requested = 'latest') {
+    const tags = Object.keys(metadata['dist-tags'])
+    if (tags.includes(requested)) {
+      return metadata['dist-tags'][requested]
+    } else {
+      const versions = Object.keys(metadata.versions)
+      return semver.maxSatisfying(versions, `^${requested}`)
+    }
   }
 
   getDefaultPacketExport(metadata, version) {
@@ -111,10 +118,7 @@ class MetadataProvider {
     }
 
     const { version: requestedVersion, path: requestedPath } = new LocationParser().parse(packet)
-    const isLabelVersion = version => ['', 'latest', 'next', 'beta', 'alpha'].includes(version)
-    const version = isLabelVersion(requestedVersion)
-      ? this.getDefaultPacketVersion(metadata, requestedVersion)
-      : requestedVersion || this.getDefaultPacketVersion(metadata)
+    const version = this.getPacketVersion(metadata, requestedVersion)
     const defaultExport = this.getDefaultPacketExport(metadata, version)
     if (!requestedPath && !defaultExport) {
       throw { code: 422, error: 'package.json/main field is empty!' }
@@ -202,8 +206,8 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
   const file = new StorageMetadataProvider({ storage })
 
   const CACHE_KEY = cache.getCacheKey(name, scope)
-  let actualVersion = requestedVersion
-  let actualPath = requestedPath
+  let actualVersion = ''
+  let actualPath = ''
 
   if (!PACKAGE_CACHE[CACHE_KEY]) {
     const filename = file.getMetadataFilename(name, scope)
@@ -226,7 +230,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
     }
   }
 
-  const isDefaultRequest = !requestedPath || !requestedVersion
+  const isDefaultRequest = requestedVersion !== actualVersion || requestedPath !== actualPath
   const contentType = !isDefaultRequest ? mime.getType(extname(requestedPath)) : null
 
   const pkg = PACKAGE_CACHE[CACHE_KEY]

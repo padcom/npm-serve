@@ -30,6 +30,7 @@
  "dependencies": {
   "mime": "^3.0.0",
   "minimist": "^1.2.6",
+  "semver": "^7.3.7",
   "tar-stream": "^2.2.0"
  }
 }
