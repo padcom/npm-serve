@@ -95,7 +95,7 @@ async function main() {
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and NOT cached dependencies took')
 
   console.time('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
-  const app = await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0.4/dist/style.css')
+  const app = await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0.6/dist/style.css')
   console.log('[HOST] Removing last app so it can be instantiated using clickme from library5')
   app.unmount()
   console.log('[HOST] App removed')
