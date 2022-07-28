@@ -24,17 +24,20 @@ args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.L = args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
 
+const print = args.quiet ? () => {} : console.log
+const printalws = console.log
+
 if (args.h || args.help) {
-  console.log(`@padcom/npm-serve by ${pkg.author}`)
-  console.log(`usage:`)
-  console.log(`  ${pkg.name} [-q] [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
-  console.log(`  ${pkg.name} -V | --version # show program version and exit`)
-  console.log(`  ${pkg.name} -h | --help # show help and exit`)
+  printalws(`@padcom/npm-serve by ${pkg.author}`)
+  printalws(`usage:`)
+  printalws(`  ${pkg.name} [-q] [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
+  printalws(`  ${pkg.name} -V | --version # show program version and exit`)
+  printalws(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
 }
 
 if (args.V || args.version) {
-  console.log(pkg.version)
+  printalws(pkg.version)
   process.exit(0)
 }
 
@@ -67,7 +70,7 @@ class Logger {
 
   constructor(level = 'info') {
     if (!Logger.LEVELS[level]) {
-      console.log('WARN: Given loglevel', level, 'is invalid. Reverting to "info"')
+      print('WARN: Given loglevel', level, 'is invalid. Reverting to "info"')
     }
     this.#level = Logger.LEVELS[level] || 'info'
   }
@@ -78,7 +81,7 @@ class Logger {
       chalk.cyan('[') + Logger.LEVEL_COLORS[level](level.padEnd(5)) + chalk.cyan(']'),
       Logger.CONTENT_COLORS[level](...args)
     ]
-    console.log(...parts)
+    printalws(...parts)
   }
 
   trace(...args) {
@@ -554,14 +557,9 @@ const server = createServer(async (req, res) => {
 })
 
 const listener = server.listen(args.port, () => {
-  const messages = [
-    'Server listening on', listener.address(),
-    '  * configured storage:', args.storage,
-    '  * fetching packages from:', args.registry,
-    '  * serving static files from:', args.documentRoot,
-  ]
-  if (!args.quiet) {
-    console.log(messages.join('\n'))
-    console.log('')
-  }
+  print('Server listening on ', listener.address())
+  print('  * configured storage: ', args.storage)
+  print('  * fetching packages from: ', args.registry)
+  print('  * serving static files from: ', args.documentRoot)
+  print('')
 })
