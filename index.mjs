@@ -22,11 +22,12 @@ args.storage = args.s || args.storage || './packages'
 args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
+args.quiet = args.q || args.quiet || false
 
 if (args.h || args.help) {
   console.log(`@padcom/npm-serve by ${pkg.author}`)
   console.log(`usage:`)
-  console.log(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
+  console.log(`  ${pkg.name} [-q] [-s storage] [-r registry] [-p port] [-L loglevel] [document_root]`)
   console.log(`  ${pkg.name} -V | --version # show program version and exit`)
   console.log(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
@@ -553,9 +554,11 @@ const server = createServer(async (req, res) => {
 })
 
 const listener = server.listen(args.port, () => {
-  console.log('Server listening on', listener.address()),
-  console.log('  * configured storage:', args.storage)
-  console.log('  * fetching packages from:', args.registry)
-  console.log('  * serving static files from:', args.documentRoot)
-  console.log('')
+  if (!args.quiet) {
+    console.log('Server listening on', listener.address()),
+    console.log('  * configured storage:', args.storage)
+    console.log('  * fetching packages from:', args.registry)
+    console.log('  * serving static files from:', args.documentRoot)
+    console.log('')
+  }
 })
