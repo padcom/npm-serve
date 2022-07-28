@@ -13,6 +13,7 @@ import minimist from 'minimist'
 import { Writable } from 'node:stream'
 import pkg from './package.json' assert { type: 'json' }
 import semver from 'semver'
+import { IncomingMessage, ServerResponse } from 'node:http'
 
 const args = minimist(process.argv.slice(2))
 args.port = args.p || args.port || 2998
@@ -376,24 +377,79 @@ async function servePacket(packet, req, res) {
   }
 }
 
-async function serveFile(req, res, url) {
+function processSubstitutes(location, content) {
+  // for local development servr substitutions:
+  //   1. replace https://unpkg.com/{package}{@version}{path} with http://localhost:2999{path}
+  //
+  // https://unpkg.com/@padcom/mf-test-common + @padcom/mf-test-common=http://localhost:2999
+  //   http://localhost:2999
+  // https://unpkg.com/@padcom/mf-test-common/dist/index.js + @padcom/mf-test-common=http://localhost:2999
+  //   http://localhost:2999/dist/index.js
+  // https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=http://localhost:2999
+  //   http://localhost:2999/dist/index.js
+
+  // for version changes:
+  //   1. replace https://unpkg.com/${package}{@version}{path} with /package/${package}@{version}{path}
+  //
+  // https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=0.0.5
+  //   /package/@padcom/mf-test-common@0.0.5/dist/index.js
+  // https://unpkg.com/@padcom/mf-test-common@0/dist/style.css + @padcom/mf-test-common=0.0.5
+  //   /package/@padcom/mf-test-common@0.0.5/dist/style.css
+  // https://unpkg.com/@padcom/mf-test-common/dist/style.css + @padcom/mf-test-common=0.0.5
+  //   /package/@padcom/mf-test-common@0.0.5/dist/style.css
+
+  location.searchParams.forEach((value, name) => {
+    if (value.startsWith('http')) {
+      const rx = /(https:\/\/unpkg\.com)\/(.+)(['"`])/g
+      content = content.replaceAll(rx, (match, host, path, ending) => {
+        const parsed = new LocationParser().parse(path)
+        const parsedName = parsed.scope ? `${parsed.scope}/${parsed.name}` : parsed.name
+        const specified = new URL(value)
+        specified.pathname = parsed.path ? `/${parsed.path}` : path
+        return name === parsedName ? `${specified.toString()}${ending}` : match
+      })
+    } else {
+      const rx = /(https:\/\/unpkg\.com)\/(.+)(['"`])/g
+      content = content.replaceAll(rx, (match, host, path, ending) => {
+        const parsed = new LocationParser().parse(path)
+        const parsedName = parsed.scope ? `${parsed.scope}/${parsed.name}` : parsed.name
+        const version = value ? `@${value}` : ''
+        const parsedPath = parsed.path ? `/${parsed.path}` : ''
+
+        return name === parsedName ? `/package/${parsedName}${version}${parsedPath}${ending}` : match
+      })
+    }
+  })
+
+  return content.replaceAll('https://unpkg.com', '/package')
+}
+
+/**
+ * Serve a static file with substitutions
+ *
+ * @param {IncomingMessage} req request
+ * @param {ServerResponse} res response
+ */
+async function serveFile(req, res) {
+  const location = new URL('http://localhost/' + req.url)
+  const url = location.pathname.split('/').slice(2)
+  console.log('req.url', url)
   const contentType = mime.getType(url)
   res.setHeader('Content-Type', contentType)
-  const filename = normalize(`${args.documentRoot}${url}`)
+  const filename = normalize(`${args.documentRoot}/${url}`)
   if (exists(filename)) {
     console.log('[info]  Serving', filename)
     if (getETagFor(filename) === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
       res.setHeader('etag', await getETagFor(filename))
-      const content = await readFile(filename)
+      let content = (await readFile(filename)).toString()
       if (['text/html', 'application/javascript'].includes(contentType)) {
-        res.write(content.toString().replaceAll('https://unpkg.com/', '/package/'))
-      } else {
-        res.write(content)
+        content = processSubstitutes(location, content)
       }
+      res.write(content)
     }
-} else {
+  } else {
     console.log('[error]', filename, 'not found')
   }
 }
