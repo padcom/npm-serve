@@ -81,26 +81,24 @@ async function main() {
   console.time('[HOST] System initialized.')
   await sleep(5000, '[HOST] System initialization started - waiting 5 seconds...')
 
-  const CDN = 'https://unpkg.com/'
-
   await Promise.all([
     start(document.getElementById('app1'), '@padcom/mf-test-library1'),
     start(document.getElementById('app2'), '@padcom/mf-test-library2'),
-    start(document.getElementById('app3'), '@padcom/mf-test-library3', CDN + '@padcom/mf-test-library3@0.0/dist/style.css'),
+    start(document.getElementById('app3'), '@padcom/mf-test-library3', 'https://unpkg.com/@padcom/mf-test-library3@0.0/dist/style.css'),
     start(document.getElementById('app4'), '@padcom/mf-test-library4'),
   ])
 
   console.time('[HOST] Instantiating a microfrontend with host-provided and NOT cached dependencies took')
-  await start(document.getElementById('app5'), '@padcom/mf-test-library5', CDN + '@padcom/mf-test-library5@0.0/dist/style.css'),
+  await start(document.getElementById('app5'), '@padcom/mf-test-library5', 'https://unpkg.com/@padcom/mf-test-library5@0.0/dist/style.css'),
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and NOT cached dependencies took')
 
   console.time('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
-  const app = await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0/dist/style.css')
+  const app = await start(document.getElementById('app6'), '@padcom/mf-test-library6', 'https://unpkg.com/@padcom/mf-test-library6@0.0/dist/style.css')
   console.log('[HOST] Removing last app so it can be instantiated using clickme from library5')
   app.unmount()
   console.log('[HOST] App removed')
   // await start(document.getElementById('app6'), 'http://localhost:3006/index.js', 'http://localhost:3006/style.css'),
-  await start(document.getElementById('app6'), '@padcom/mf-test-library6', CDN + '@padcom/mf-test-library6@0.0/dist/style.css')
+  await start(document.getElementById('app6'), '@padcom/mf-test-library6', 'https://unpkg.com/@padcom/mf-test-library6@0.0/dist/style.css')
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
 
   window.addEventListener('message', async (event) => {

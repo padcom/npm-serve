@@ -377,7 +377,8 @@ async function servePacket(packet, req, res) {
 }
 
 async function serveFile(req, res, url) {
-  res.setHeader('Content-Type', mime.getType(url))
+  const contentType = mime.getType(url)
+  res.setHeader('Content-Type', contentType)
   const filename = normalize(`${args.documentRoot}${url}`)
   if (exists(filename)) {
     console.log('[info]  Serving', filename)
@@ -386,7 +387,11 @@ async function serveFile(req, res, url) {
     } else {
       res.setHeader('etag', await getETagFor(filename))
       const content = await readFile(filename)
-      res.write(content)
+      if (['text/html', 'application/javascript'].includes(contentType)) {
+        res.write(content.toString().replaceAll('https://unpkg.com/', '/package/'))
+      } else {
+        res.write(content)
+      }
     }
 } else {
     console.log('[error]', filename, 'not found')
