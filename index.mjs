@@ -377,7 +377,7 @@ async function servePacket(packet, req, res) {
   }
 }
 
-function processSubstitutes(location, content) {
+function processSubstitutes(req, location, content) {
   // for local development servr substitutions:
   //   1. replace https://unpkg.com/{package}{@version}{path} with http://localhost:2999{path}
   //
@@ -398,7 +398,10 @@ function processSubstitutes(location, content) {
   // https://unpkg.com/@padcom/mf-test-common/dist/style.css + @padcom/mf-test-common=0.0.5
   //   /package/@padcom/mf-test-common@0.0.5/dist/style.css
 
-  location.searchParams.forEach((value, name) => {
+  const substitutions = new URL(req.headers.referer ? req.headers.referer : 'http://localhost/' + req.url).searchParams
+  console.log('substitutions:', substitutions)
+
+  substitutions.forEach((value, name) => {
     if (value.startsWith('http')) {
       const rx = /(https:\/\/unpkg\.com)\/(.+)(['"`])/g
       content = content.replaceAll(rx, (match, host, path, ending) => {
@@ -432,7 +435,7 @@ function processSubstitutes(location, content) {
  */
 async function serveFile(req, res) {
   const location = new URL('http://localhost/' + req.url)
-  const url = location.pathname.split('/').slice(2)
+  const url = location.pathname.split('/').slice(2).join('/') || 'index.html'
   console.log('req.url', url)
   const contentType = mime.getType(url)
   res.setHeader('Content-Type', contentType)
@@ -445,7 +448,7 @@ async function serveFile(req, res) {
       res.setHeader('etag', await getETagFor(filename))
       let content = (await readFile(filename)).toString()
       if (['text/html', 'application/javascript'].includes(contentType)) {
-        content = processSubstitutes(location, content)
+        content = processSubstitutes(req, location, content)
       }
       res.write(content)
     }
