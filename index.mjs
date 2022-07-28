@@ -377,29 +377,35 @@ async function servePacket(packet, req, res) {
   }
 }
 
-function processSubstitutes(req, location, content) {
-  // for local development servr substitutions:
-  //   1. replace https://unpkg.com/{package}{@version}{path} with http://localhost:2999{path}
-  //
-  // https://unpkg.com/@padcom/mf-test-common + @padcom/mf-test-common=http://localhost:2999
-  //   http://localhost:2999
-  // https://unpkg.com/@padcom/mf-test-common/dist/index.js + @padcom/mf-test-common=http://localhost:2999
-  //   http://localhost:2999/dist/index.js
-  // https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=http://localhost:2999
-  //   http://localhost:2999/dist/index.js
-
-  // for version changes:
-  //   1. replace https://unpkg.com/${package}{@version}{path} with /package/${package}@{version}{path}
-  //
-  // https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=0.0.5
-  //   /package/@padcom/mf-test-common@0.0.5/dist/index.js
-  // https://unpkg.com/@padcom/mf-test-common@0/dist/style.css + @padcom/mf-test-common=0.0.5
-  //   /package/@padcom/mf-test-common@0.0.5/dist/style.css
-  // https://unpkg.com/@padcom/mf-test-common/dist/style.css + @padcom/mf-test-common=0.0.5
-  //   /package/@padcom/mf-test-common@0.0.5/dist/style.css
-
-  const substitutions = new URL(req.headers.referer ? req.headers.referer : 'http://localhost/' + req.url).searchParams
-  console.log('substitutions:', substitutions)
+/**
+ * Substitute the packages given in query string with the new values.
+ *
+ * For local development servr substitutions:
+ *   1. replace https://unpkg.com/{package}{@version}{path} with http://localhost:2999{path}
+ *
+ * https://unpkg.com/@padcom/mf-test-common + @padcom/mf-test-common=http://localhost:2999
+ *   http://localhost:2999
+ * https://unpkg.com/@padcom/mf-test-common/dist/index.js + @padcom/mf-test-common=http://localhost:2999
+ *   http://localhost:2999/dist/index.js
+ * https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=http://localhost:2999
+ *   http://localhost:2999/dist/index.js*
+ *
+ * For version changes:
+ *   1. replace https://unpkg.com/${package}{@version}{path} with /package/${package}@{version}{path}
+ *
+ * https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=0.0.5
+ *   /package/@padcom/mf-test-common@0.0.5/dist/index.js
+ * https://unpkg.com/@padcom/mf-test-common@0/dist/style.css + @padcom/mf-test-common=0.0.5
+ *   /package/@padcom/mf-test-common@0.0.5/dist/style.css
+ * https://unpkg.com/@padcom/mf-test-common/dist/style.css + @padcom/mf-test-common=0.0.5
+ *   /package/@padcom/mf-test-common@0.0.5/dist/style.css
+ *
+ * @param {IncomingMessage} req request
+ * @param {String} content original content as it was read from disk
+ */
+function processSubstitutes(req, content) {
+  const source = req.headers.referer ? req.headers.referer : 'x://x/' + req.url
+  const substitutions = new URL(source).searchParams
 
   substitutions.forEach((value, name) => {
     if (value.startsWith('http')) {
@@ -409,6 +415,7 @@ function processSubstitutes(req, location, content) {
         const parsedName = parsed.scope ? `${parsed.scope}/${parsed.name}` : parsed.name
         const specified = new URL(value)
         specified.pathname = parsed.path ? `/${parsed.path}` : path
+
         return name === parsedName ? `${specified.toString()}${ending}` : match
       })
     } else {
@@ -435,11 +442,12 @@ function processSubstitutes(req, location, content) {
  */
 async function serveFile(req, res) {
   const location = new URL('http://localhost/' + req.url)
-  const url = location.pathname.split('/').slice(2).join('/') || 'index.html'
-  console.log('req.url', url)
-  const contentType = mime.getType(url)
+  const path = location.pathname.split('/').slice(2).join('/') || 'index.html'
+
+  const contentType = mime.getType(path)
   res.setHeader('Content-Type', contentType)
-  const filename = normalize(`${args.documentRoot}/${url}`)
+
+  const filename = normalize(`${args.documentRoot}/${path}`)
   if (exists(filename)) {
     console.log('[info]  Serving', filename)
     if (getETagFor(filename) === req.headers['if-none-match']) {
@@ -448,7 +456,7 @@ async function serveFile(req, res) {
       res.setHeader('etag', await getETagFor(filename))
       let content = (await readFile(filename)).toString()
       if (['text/html', 'application/javascript'].includes(contentType)) {
-        content = processSubstitutes(req, location, content)
+        content = processSubstitutes(req, content)
       }
       res.write(content)
     }
