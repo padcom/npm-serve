@@ -53,7 +53,7 @@ class Logger {
   static LEVEL_COLORS = {
     trace:    chalk.dim.gray,
     debug:    chalk.dim.gray,
-    info:     chalk.gray,
+    info:     chalk.reset,
     warn:     chalk.yellow,
     error:    chalk.red,
   }

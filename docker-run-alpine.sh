@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker run --rm -it -p 2998:2998 -v $(pwd)/docs:/var/lib/npm-serve/static-files node:alpine npx -y @padcom/npm-serve /var/lib/npm-serve/static-files
+docker run --rm -it -p 2998:2998 -v $(pwd)/docs:/var/lib/npm-serve/static-files node:alpine npx -y @padcom/npm-serve /var/lib/npm-serve/static-files -q
