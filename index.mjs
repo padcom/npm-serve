@@ -17,12 +17,12 @@ import { IncomingMessage, ServerResponse } from 'node:http'
 import chalk from 'chalk'
 
 const args = minimist(process.argv.slice(2))
-args.port = args.p || args.port || 2998
-args.storage = args.s || args.storage || './packages'
-args.registry = args.r || args.registry || 'https://registry.npmjs.org'
-args.loglevel = args.L || args.loglevel || 'info'
+args.q = args.quiet = args.q || args.quiet || false
+args.p = args.port = args.p || args.port || 2998
+args.s = args.storage = args.s || args.storage || './packages'
+args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
+args.L = args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
-args.quiet = args.q || args.quiet || false
 
 if (args.h || args.help) {
   console.log(`@padcom/npm-serve by ${pkg.author}`)
