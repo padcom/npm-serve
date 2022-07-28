@@ -55,6 +55,8 @@ class MetadataProvider {
   }
 
   /**
+   * Retrieve package metadata
+   *
    * @param {String} name package name
    * @param {String} scope package scope (optional)
    */
@@ -188,10 +190,12 @@ class StorageMetadataProvider extends MetadataProvider {
 }
 
 /**
- * Download packet metadata
+ * Download packet metadata and calculate other packet info.
+ *
  * @param {String} packet packet name (including scope, packet name and optionally version)
  */
 async function getPacketInfo(packet, { storage = './packages' } = {}) {
+  // TODO: this function is very complex, needs to be split into smaller pieces
   const { scope, name, path: requestedPath, version: requestedVersion } = new LocationParser().parse(packet)
   const cache = new CacheMetadataProvider({ storage })
   const npm = new NPMMetadataProvider({ storage })
@@ -251,6 +255,13 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
   }
 }
 
+/**
+ * Download a file from location (url) to file (local)
+ *
+ * @param {String} location url where to get the file from
+ * @param {String} file path to the file on disk
+ * @returns {Promise<void>} an empty promise when the file has been retrieved
+ */
 async function download(location, file) {
   console.log('Downloading file', location, 'to', file)
   return new Promise((resolve, reject) => {
