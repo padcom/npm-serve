@@ -6,7 +6,7 @@ import {
   getLibraryMetadata,
   isLibraryRegistered,
   loadStylesheetsFromLibrary,
-} from './libraries.js'
+} from '@padcom/npm-serve'
 
 registerLibraryStylesheet('@padcom/mf-test-library3', 'dist/style.css')
 registerLibraryStylesheet('@padcom/mf-test-library5', 'dist/style.css')
