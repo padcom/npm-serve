@@ -261,7 +261,7 @@ Back to the story of Dragons and Penguins.
 
 Today was a busy day for Penguins. The project manager brought to everyone's attention that notorious bug that the CEO has been talking about during Yesterday's all-hands meeting. The stakes are high, atmosphere is thick, everyone's on the edge and wants to get shit done ASAP.
 
-Then he opens up a new terminal, navigates to the `ads` repository and starts his development environment. He can work either on a locally-served stripped down version of the lib or, assuming that the files are available somehow via http, hook them up directly to the dev server by navigating to `https://example-super.app?@example/ads=http://localhost:1234` where `1234` is the port where your files are served. And best of all, the rest of the application is served as-is in production! It just works!
+John is our designated driver for the adventure. He opens up a new terminal, navigates to the `ads` repository and starts his development environment. He can work either on a locally-served stripped down version of the lib or, assuming that the files are available somehow via http, hook them up directly to the dev server by navigating to `https://example-super.app?@example/ads=http://localhost:1234` where `1234` is the port where your files are served. And best of all, the rest of the application is served as-is in production! It just works!
 
 The bug was actually easy to find and fix, it's just one of those things that never come up during testing or development and the users are furious that it doesn't work. John fixes it on a branch and pushes it to the remote repository.
 
