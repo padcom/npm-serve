@@ -11,12 +11,19 @@ import tar from 'tar-stream'
 import mime from 'mime'
 import minimist from 'minimist'
 import { Writable } from 'node:stream'
+import pkg from './package.json' assert { type: 'json' }
 
 const args = minimist(process.argv.slice(2))
 args.port = args.p || args.port || 2998
 args.storage = args.s || args.storage || './packages'
-args.registry = args.c || args.registry || 'https://registry.npmjs.org'
+args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.documentRoot = args._[0] || '.'
+
+if (args.h || args.help) {
+  console.log('npm-serve version', pkg.version, '\n')
+  console.log(`usage: ${pkg.name} [-s storage] [-r registry] [-p port] [document_root]`)
+  process.exit(0)
+}
 
 class LocationParser {
   /**
