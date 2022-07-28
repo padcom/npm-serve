@@ -27,8 +27,8 @@ async function start(root, library) {
 
   loadStylesheetsFromLibrary(library)
 
-  console.log(`[HOST] Dynamically importing ${library} exports...`)
-  const { start } = await import(library.name)
+  console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
+  const { start } = await import(library.npm.fullname)
   console.log('[HOST] Exports loaded:')
   console.log('[HOST] > start =', start)
   console.log('')
@@ -52,7 +52,7 @@ async function startApp(root, library) {
   loadStylesheetsFromLibrary(library)
 
   console.log(`[HOST] Dynamically importing ${library} exports...`)
-  const { App } = await import(library.name)
+  const { App } = await import(library.npm.fullname)
   console.log('[HOST] Exports loaded:')
   console.log('[HOST] > App =', App)
   console.log('')
