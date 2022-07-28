@@ -24,8 +24,8 @@ args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.L = args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
 
-const print = args.quiet ? () => {} : console.log
-const printalws = console.log
+const print = args.quiet ? () => {} : console.log.bind(console)
+const printalws = console.log.bind(console)
 
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
@@ -53,7 +53,7 @@ class Logger {
   static LEVEL_COLORS = {
     trace:    chalk.dim.gray,
     debug:    chalk.dim.gray,
-    info:     s => s,
+    info:     (...args) => [...args],
     warn:     chalk.yellow,
     error:    chalk.red,
   }
@@ -61,9 +61,9 @@ class Logger {
   static CONTENT_COLORS = {
     trace:    chalk.dim.gray,
     debug:    chalk.dim.gray,
-    info:     s => s,
-    warn:     s => s,
-    error:    s => s,
+    info:     (...args) => [...args],
+    warn:     (...args) => [...args],
+    error:    (...args) => [...args],
   }
 
   #level
@@ -76,32 +76,34 @@ class Logger {
   }
 
   #log(level, ...args) {
-    const parts = [
-      chalk.bold(new Date().toISOString()),
-      chalk.cyan('[') + Logger.LEVEL_COLORS[level](level.padEnd(5)) + chalk.cyan(']'),
-      Logger.CONTENT_COLORS[level](...args)
-    ]
-    printalws(...parts)
+    if (this.#level >= Logger.LEVELS[level]) {
+      const parts = [
+        chalk.bold(new Date().toISOString()),
+        chalk.cyan('[') + Logger.LEVEL_COLORS[level](level.padEnd(5)) + chalk.cyan(']'),
+        ...Logger.CONTENT_COLORS[level](...args)
+      ]
+      printalws(...parts)
+    }
   }
 
   trace(...args) {
-    if (this.#level >= Logger.LEVELS.trace) this.#log('trace', ...args)
+    this.#log('trace', ...args)
   }
 
   debug(...args) {
-    if (this.#level >= Logger.LEVELS.debug) this.#log('debug', ...args)
+    this.#log('debug', ...args)
   }
 
   info(...args) {
-    if (this.#level >= Logger.LEVELS.info) this.#log('info', ...args)
+    this.#log('info', ...args)
   }
 
   warn(...args) {
-    if (this.#level >= Logger.LEVELS.warn) this.#log('warn', ...args)
+    this.#log('warn', ...args)
   }
 
   error(...args) {
-    if (this.#level >= Logger.LEVELS.error) this.#log('error', ...args)
+    this.#log('error', ...args)
   }
 }
 
@@ -326,7 +328,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
         const { metadata } = await npm.update(cache, packet, name, scope)
         logger.info('Cache updated successfully for', metadata.name)
       } catch (e) {
-        logger.error('unable to refresh package', CACHE_KEY, ':', e)
+        logger.warn('unable to refresh package', CACHE_KEY, ':', e)
       }
     })
   }
@@ -438,7 +440,7 @@ async function servePacket(packet, req, res) {
       }
     }
   } catch (e) {
-    console.error('ERROR:', e)
+    logger.error('ERROR:', e)
     if (e.code && e.error) {
       res.statusCode = e.code
       res.statusMessage = e.error
@@ -533,7 +535,7 @@ async function serveFile(req, res) {
       res.write(content)
     }
   } else {
-    logger.error(filename, 'not found')
+    logger.warn('HTTP/1.1 GET -', filename, 'not found')
   }
 }
 
