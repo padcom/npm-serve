@@ -1,19 +1,40 @@
+/** Cache for libraries */
 const LIBRARIES = {}
 
-export function isLibraryRegistered(library) {
-  return Boolean(LIBRARIES[library])
+/**
+ * Checks if the given library is registered
+ *
+ * @param {String} name name of the library
+ */
+ export function isLibraryRegistered(name) {
+  return Boolean(LIBRARIES[name])
 }
 
-export function getLibraryMetadata(library) {
-  return LIBRARIES[library]
+/**
+ * Retrieve library metadata by name
+ *
+ * @param {String} name name of the library
+ */
+export function getLibraryMetadata(name) {
+  return LIBRARIES[name]
 }
 
+/**
+ * Registers a stylesheet with the given library
+ *
+ * @param {Library} library the library to register the stylesheet with
+ * @param {String} stylesheet path to the stylesheet file within the package's root folder
+ */
 export function registerLibraryStylesheet(library, stylesheet) {
   getLibraryMetadata(library)?.stylesheets.push(stylesheet)
 }
 
+/**
+ * Load a stylesheet by adding it to the DOM
+ *
+ * @param {String} stylesheet url of the stylesheet
+ */
 function loadStylesheet(stylesheet) {
-  console.log('[HOST] Dynamically importing', stylesheet)
   const link = document.createElement('link')
   link.setAttribute('rel', 'stylesheet')
   link.setAttribute('type', 'text/css')
@@ -21,6 +42,12 @@ function loadStylesheet(stylesheet) {
   document.head.appendChild(link)
 }
 
+/**
+ * Load stylesheets (.css) from the given library.
+ * Styles are loaded only once and cached.
+ *
+ * @param {Library} library library to load stylesheets from
+ */
 export function loadStylesheetsFromLibrary(library) {
   if (library.stylesheetsLoaded) return
 
@@ -34,6 +61,12 @@ export function loadStylesheetsFromLibrary(library) {
   }
 }
 
+/**
+ * Parse NPM coordinates like so: /prefix/@scope/name@version/path/file.txt
+ *
+ * @param {String} coords NPM coordinates to parse
+ * @param {Number} prefixLength number of path items to cut off of the prefix
+ */
 function parseNpmCoords(coords, prefixLength = 0) {
   const parts = coords.split('/').filter(x => x).slice(prefixLength)
   const scope = parts[0][0] === '@' ? parts[0] : ''
@@ -47,10 +80,19 @@ function parseNpmCoords(coords, prefixLength = 0) {
   return { fullname, scope, name, version, path, root }
 }
 
+/**
+ * This function searches all the script tags within the DOM to find the one
+ * with type "importmap"
+ */
 function discoverImportmapScript() {
   return [...document.scripts].find(script => script.type === 'importmap')
 }
 
+/**
+ * Initialize the libraries subsystem
+ *
+ * @param {string|HTMLScriptElement|Object|undefined} imports something that will provide a list of imports. By default document.scripts will be scanned for script type="importmap"
+ */
 export function initialize(imports = null) {
   if (!imports) {
     const script = discoverImportmapScript()
