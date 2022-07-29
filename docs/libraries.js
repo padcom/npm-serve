@@ -1,4 +1,4 @@
-const LIBRARIES = JSON.parse(document.scripts.imports.innerText).imports
+const LIBRARIES = {}
 
 export function isLibraryRegistered(library) {
   return Boolean(LIBRARIES[library])
@@ -47,20 +47,40 @@ function parseNpmCoords(coords, prefixLength = 0) {
   return { fullname, scope, name, version, path, root }
 }
 
-for (const [library, origin] of Object.entries(LIBRARIES)) {
-  const isAbsoluteOrigin = origin.startsWith('http://') || origin.startsWith('https://')
-  const isDevelopment = origin.startsWith('http://localhost:')
-  const url = new URL(isAbsoluteOrigin ? origin : window.location.origin + origin)
-  const cdn = isAbsoluteOrigin ? url.origin : '/package'
-  const prefixLength = isAbsoluteOrigin ? 0 : 1
-  const npm = isDevelopment ? parseNpmCoords(library) : parseNpmCoords(url.pathname, prefixLength)
+function discoverImportmapScript() {
+  return [...document.scripts].find(script => script.type === 'importmap')
+}
 
-  LIBRARIES[library] = {
-    name: library,
-    npm,
-    cdn,
-    isDevelopment,
-    stylesheets: [],
-    stylesheetsLoaded: false,
+export function initialize(imports = null) {
+  if (!imports) {
+    const script = discoverImportmapScript()
+    if (!script) throw new Error('No import map found!')
+    return initialize(script)
+  } else if (typeof imports === 'string') {
+    imports = JSON.parse(document.scripts[imports].innerText).imports
+  } else if (imports instanceof HTMLScriptElement) {
+    imports = JSON.parse(imports.innerText).imports
+  } else if (typeof imports === 'object') {
+    // assuming it's a key-value store containing package names with keys and locations as values
+  } else {
+    throw new Error('Don\'t know how to initialize with', imports)
+  }
+
+  for (const [library, origin] of Object.entries(imports)) {
+    const isAbsoluteOrigin = origin.startsWith('http://') || origin.startsWith('https://')
+    const isDevelopment = origin.startsWith('http://localhost:')
+    const url = new URL(isAbsoluteOrigin ? origin : window.location.origin + origin)
+    const cdn = isAbsoluteOrigin ? url.origin : '/package'
+    const prefixLength = isAbsoluteOrigin ? 0 : 1
+    const npm = isDevelopment ? parseNpmCoords(library) : parseNpmCoords(url.pathname, prefixLength)
+
+    LIBRARIES[library] = {
+      name: library,
+      npm,
+      cdn,
+      isDevelopment,
+      stylesheets: [],
+      stylesheetsLoaded: false,
+    }
   }
 }

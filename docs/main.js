@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { events } from '@padcom/mf-test-common'
 import {
+  initialize,
   isLibraryRegistered, getLibraryMetadata,
   registerLibraryStylesheet, loadStylesheetsFromLibrary,
 } from '@padcom/npm-serve'
@@ -90,6 +91,8 @@ async function main() {
 
   console.timeEnd('[HOST] System initialized.')
 }
+
+initialize()
 
 // Vue.js and React require this (simulates dotenv)
 globalThis.process = { env: { NODE_ENV: 'development' } }
