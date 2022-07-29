@@ -4,6 +4,7 @@ import {
   initialize,
   isLibraryRegistered, getLibraryMetadata,
   registerLibraryStylesheet, loadStylesheetsFromLibrary,
+  unloadStylesheetFromLibrary
 } from '@padcom/npm-serve'
 
 async function start(root, library) {
@@ -30,28 +31,40 @@ async function start(root, library) {
   return app
 }
 
+const APPS = {}
+
 async function startApp(root, library) {
   if (!isLibraryRegistered(library)) throw new Error('Unknown library', library)
   library = getLibraryMetadata(library)
 
-  console.time('[HOST] Starting application ' + library.npm.fullname + ' took')
+  if (APPS[library.npm.fullname]) {
+    unloadStylesheetFromLibrary(library)
+    APPS[library.npm.fullname].app.unmount()
+    delete APPS[library.npm.fullname]
+    return null
+  } else {
+    console.time('[HOST] Starting application ' + library.npm.fullname + ' took')
 
-  loadStylesheetsFromLibrary(library)
+    loadStylesheetsFromLibrary(library)
 
-  console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
-  const { App } = await import(library.npm.fullname)
-  console.log('[HOST] Exports loaded:')
-  console.log('[HOST] > App =', App)
-  console.log('')
+    console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
+    const { App } = await import(library.npm.fullname)
+    console.log('[HOST] Exports loaded:')
+    console.log('[HOST] > App =', App)
+    console.log('')
 
-  console.log('[HOST] Instantiating microfrontend')
-  const app = createApp(App).mount(root)
-  console.log('[HOST] app =', app)
-  console.log('')
+    console.log('[HOST] Instantiating microfrontend')
+    const app = createApp(App)
+    app.mount(root)
+    console.log('[HOST] app =', app)
+    console.log('')
 
-  console.timeEnd('[HOST] Starting application ' + library.npm.fullname + ' took')
+    console.timeEnd('[HOST] Starting application ' + library.npm.fullname + ' took')
 
-  return app
+    APPS[library.npm.fullname] = { app }
+
+    return app
+  }
 }
 
 async function main() {

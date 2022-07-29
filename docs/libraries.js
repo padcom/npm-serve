@@ -40,6 +40,8 @@ function loadStylesheet(stylesheet) {
   link.setAttribute('type', 'text/css')
   link.setAttribute('href', stylesheet)
   document.head.appendChild(link)
+
+  return link
 }
 
 /**
@@ -53,12 +55,30 @@ export function loadStylesheetsFromLibrary(library) {
 
   for (const stylesheet of library.stylesheets) {
     if (library.isDevelopment) {
-      loadStylesheet(`${library.cdn}/${stylesheet}`)
+      library.loadedStylesheets.push(loadStylesheet(`${library.cdn}/${stylesheet}`))
     } else {
-      loadStylesheet(`${library.cdn}/${library.npm.root}/${stylesheet}`)
+      library.loadedStylesheets.push(loadStylesheet(`${library.cdn}/${library.npm.root}/${stylesheet}`))
     }
     library.stylesheetsLoaded = true
   }
+}
+
+/**
+ * Unload stylesheets that have been loaded from a library
+ * Once styles have been unloaded they can be again loaded using
+ * loadStylesheetsFromLibrary() function
+ *
+ * @param {Library} library library to unload stylesheets from
+ */
+export function unloadStylesheetFromLibrary(library) {
+  if (!library.stylesheetsLoaded) return
+
+  for (const stylesheet of library.loadedStylesheets) {
+    stylesheet.remove()
+  }
+
+  library.loadedStylesheets = []
+  library.stylesheetsLoaded = false
 }
 
 /**
@@ -131,6 +151,7 @@ export function initialize(
       isDevelopment,
       stylesheets: [],
       stylesheetsLoaded: false,
+      loadedStylesheets: []
     }
   }
 }
