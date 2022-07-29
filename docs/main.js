@@ -38,7 +38,7 @@ async function startApp(root, library) {
 
   loadStylesheetsFromLibrary(library)
 
-  console.log(`[HOST] Dynamically importing ${library} exports...`)
+  console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
   const { App } = await import(library.npm.fullname)
   console.log('[HOST] Exports loaded:')
   console.log('[HOST] > App =', App)
