@@ -441,11 +441,12 @@ async function servePacket(packet, req, res) {
       }
     }
   } catch (e) {
-    logger.error(e)
     if (e.code && e.error) {
+      logger.error(e.error)
       res.statusCode = e.code
       res.statusMessage = e.error
     } else {
+      logger.error(e)
       res.statusCode = 500
       res.statusMessage = 'Unknown error + "' + e + '"'
     }
