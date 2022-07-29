@@ -1,10 +1,10 @@
 {
  "name": "@padcom/npm-serve",
- "version": "1.2.0",
+ "version": "1.2.0-beta.0",
  "author": "Matthias Hryniszak <padcom@gmail.com>",
  "license": "Apache-2.0",
  "type": "module",
- "main": "./index.mjs",
+ "main": "docs/libraries.js",
  "keywords": [
   "microfrontend",
   "microfrontends"
