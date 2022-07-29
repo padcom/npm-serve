@@ -92,8 +92,16 @@ function discoverImportmapScript() {
  * Initialize the libraries subsystem
  *
  * @param {string|HTMLScriptElement|Object|undefined} imports something that will provide a list of imports. By default document.scripts will be scanned for script type="importmap"
+ * @param {String} localCdn location of the local NPM CDN (default: /package, as served by npm-serve)
+ * @param {Number} localCdnPrefixLength how many items of the localCdn's path need to be taken out to get to the package name
+ * @param {String} remoteCdn location of the remote NPM CDN (default: https://unpkg.com, as used by npm-serve)
+ * @param {Number} localCdnPrefixLength how many items of the remoteCdn's path need to be taken out to get to the package name
  */
-export function initialize(imports = null) {
+export function initialize(
+  imports = null,
+  localCdn = '/package', localCdnPrefixLength = 1,
+  remoteCdn = 'https://unpkg.com', remoteCdnPrefixLength = 0
+) {
   if (!imports) {
     const script = discoverImportmapScript()
     if (!script) throw new Error('No import map found!')
@@ -112,8 +120,8 @@ export function initialize(imports = null) {
     const isAbsoluteOrigin = origin.startsWith('http://') || origin.startsWith('https://')
     const isDevelopment = origin.startsWith('http://localhost:')
     const url = new URL(isAbsoluteOrigin ? origin : window.location.origin + origin)
-    const cdn = isAbsoluteOrigin ? url.origin : '/package'
-    const prefixLength = isAbsoluteOrigin ? 0 : 1
+    const cdn = isAbsoluteOrigin ? url.origin : localCdn
+    const prefixLength = isAbsoluteOrigin ? remoteCdnPrefixLength : localCdnPrefixLength
     const npm = isDevelopment ? parseNpmCoords(library) : parseNpmCoords(url.pathname, prefixLength)
 
     LIBRARIES[library] = {
