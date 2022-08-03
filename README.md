@@ -4,6 +4,8 @@ File and npm package server.
 
 ## TL;DR;
 
+### Server-side
+
 Issue the following command to use it:
 
 ```
@@ -18,6 +20,40 @@ $ docker run --rm -it \
   -p 2998:2998 \
   -v $(pwd):/var/lib/npm-serve/static-files \
   padcom/npm-serve
+```
+
+### Client-side
+
+```
+<script type="libraries">
+{
+  "libraries": [
+    "vue@3.2.37/dist/vue.runtime.esm-browser.js",
+    {
+      "library": "@scope/library@3.2/dist/index.js",
+      "stylesheets": [ 'dist/styles.css' ]
+    }
+  ],
+  "config": {
+    "cdn": "/package/",
+    "overrides": true
+  }
+}
+</script>
+<script src="https://unpkg.com/@padcom/npm-serve@2/docs/importmap.js"></script>
+```
+
+Use the following to import a library and its styles:
+
+```
+const lib = await import('@scope/package')
+loadStylesheetsFromLibrary('@scope/package')
+```
+
+Use the following to unload styles loaded for a library:
+
+```
+unloadStylesheetsFromLibrary('@scope/package')
 ```
 
 ## A bit of history
@@ -100,6 +136,132 @@ or if you'd like to import another file from latest version:
   <link rel="stylesheet" href="/package/@padcom/mf-test-library3/dist/style.css">
 ```
 
+## Using client-side generation of importmap
+
+At times it'd be great to be able to, for example, switch from one CDN to another. Let's say JSPM is out for some reason. All you'd expect to have to do would be to provide a URL to another location just once and that'd be applied to all imports.
+
+This is where the `importmap` generator comes into play. It's a simple JSON object generator, nothing fancy at first glance. However, the devil's in the details.
+
+### Loading client-side script
+
+The library needs a starting point to do its magic. Add that to your file _after_ the `libraries` script:
+
+```
+<script src="https://unpkg.com/@padcom/npm-serve@2/docs/importmap.js"></script>
+```
+
+### Specifying libraries
+
+At this point it is worth mentioning that I'll be referring to anything deployed on NPM as a `library`. So if you'd like to use, for example Vue.js (which is a library) you'd have to give a bit more details to the system:
+
+```
+<script type="libraries">
+{
+  "libraries": [
+    "vue@3.2.37/dist/vue.runtime.esm-browser.js"
+  ]
+}
+</script>
+```
+
+This will by default generate the following importmap:
+
+```
+<script type="importmap">
+{
+  "imports": {
+    "vue": "https://unpkg.com/vue@3.2.37/dist/vue.runtime.esm-browser.js"
+  }
+}
+</script>
+```
+
+Again, nothing fancy, but there's a little bit of magic already happening. The system knows that all libraries are available at https://unpkg.com, so that's where it will get them from.
+
+What if we'd like to change the default CDN to something else?
+
+```
+<script type="libraries">
+{
+  "libraries": [
+    "vue@3.2.37/dist/vue.runtime.esm-browser.js"
+  ],
+  "config": {
+    "cdn": "/package/"
+  }
+}
+</script>
+```
+
+That will produce the following importmap:
+
+```
+<script type="importmap">
+{
+  "imports": {
+    "vue": "/package/vue@3.2.37/dist/vue.runtime.esm-browser.js"
+  }
+}
+</script>
+```
+
+This is where `@padcom/npm-serve` comes in - just serving static files + npm packages.
+
+### Stylesheets
+
+To load styles for a given library you need to do two things. First, you need to tell the system, that the library has stylesheet(s):
+
+```
+<script type="libraries">
+{
+  "libraries": [
+    {
+      "library": "@padcom/mf-test-library3",
+      "stylesheets": [ "dist/style.css" ]
+    }
+  ],
+  "config": {
+    "cdn": "/package/"
+  }
+}
+</script>
+```
+
+Then, use the `loadStylesheetsFromLibrary(name)` function and give it the full name of the library (so, with scope if it is scoped):
+
+```
+loadStylesheetsFromLibrary('@padcom/mf-test-library5')
+```
+
+There's also the `unloadStylesheetsFromLibrary(name)` version to remove any stylesheets loaded for that library.
+
+### Overrides
+
+Suppose you're working on a site that's composed of, let's say, 200 _possible_ libraries. Trying to spin that kind of an environment locally will surely end with everything just freezing. But there's a solution to the problem. First things first - we already have _an environment_. That's, for example, https://unpkg.com. We can host the website from there - no problem. But for development purposes we'd need a sort of surgical knife to tell the system that for _this_ particular library you'd like it to be hosted locally, let's say http://localhost:3005/dist/index.js. You can do that by specifying an override in the configuration:
+
+```
+https://unpkg.com/@scope/package?@padcom/mf-test-library5=http://localhost:3005/dist/index.js
+```
+
+That's simple enough, right? You just tell the system that for a given package the CDN is somewhere else.
+Another option is to just specify a version, like `1.0.4` or tag like `latest` or `beta`. In this case it won't be the CDN that's changed but the version of the library.
+On top of that there's nothing standing in your way to develop that particular part using full development tools but it needs to be a separate application, a sort of _dev playground_.
+
+That override behavior can be explicitly turned off (maybe someone wouldn't like to have that capability in production for whatever reason):
+
+```
+<script type="libraries">
+{
+  "libraries": [
+    ...
+  ],
+  "config": {
+    "overrides": false
+  }
+}
+</script>
+```
+
 ### Quick note about deploying non-latest versions
 
 When you want to [deploy a version for a different `tag`](https://docs.npmjs.com/adding-dist-tags-to-packages) (as npm calls them) you need to let npm know about it:
@@ -174,50 +336,6 @@ Initially the idea of [microfrontends](https://micro-frontends.org/), created by
 - If you want to limit the number of possible versions (e.g. all lower than 3.0 but higer than 2.0) omit the part of version that you want the service to fill in automatically
 - If speed is what you have the need for then use full version with full path to the exported files; it'll limit the number of 302 responses
 
-## Substitutions
-
-This is probably one of the more powerful features of `@padcom/npm-serve`. Let's examine the following scenarios
-
-### Local development
-
-> As a developer I want to work on part of the application that needs changes
-
-In this case you probably want _all_ modules served from the registry besides one or more packages that are served locally. To achieve that navigate to:
-
-http://localhost:2998?@scope/package=http://localhost:3009
-
-where `@scope/package` is the package you want to substitute (@scope is mandatory for scoped packages) and `http://localhost:3009` is the local development server address.
-
-This will substitute everything in the locally served static files.
-
-### Using beta versions
-
-> As a user I want to check out the latest beta version of a specific part of the system
-
-In this case you probably want _all_ modules served from the registry but one of those needs to have a version that you need:
-
-http://localhost:2998?@scope/package=0.0.2-beta
-
-where `@scope/package` is the package you want to substitute (`@scope` is mandatory for scoped packages) and `0.0.2-beta` is the coordinate to the tag `beta` of version `0.0.2`.
-
-This will substitute everything in the locally served static files setting the version to `0.0.2-beta`. Since `@padcom/npm-serve` is clever enough to know how to decode the `beta` version you will end up with the latest beta release for the given version, e.g. `@scope/package=0.0.2-beta.1`
-
-### Remarks
-
-The substitutions happen against the https://unpkg.com CDN. That means if you want those substitutions to work your initial definitions in `index.html` or connected javascript modules need to refer to the CDN.
-
-Check out the example [index.html](https://github.com/padcom/npm-serve/blob/master/docs/index.html) and [main.js](https://github.com/padcom/npm-serve/blob/master/docs/main.js)
-
-## Examples
-
-[Microfrontends with Vue and React](https://github.com/padcom/importmap-vue3-react-mf-example) Multiple external libraries, common library, host.
-
-To use this example cd to the `host` folder and issue the following command:
-
-```
-$ npx @padcom/npm-serve .
-```
-
 ## Workflows
 
 So, you have a pretty good understanding of how the `@padcom/npm-serve` package works and you can use it for a simple project, but how would you put together a massive project with multiple teams and tens of microfrontends?
@@ -287,4 +405,12 @@ And that's it! That's how not only developers, but also managers and infrastruct
 
 Because I think that happy developers make for happy customers which turns into money in everyone's pocket!
 
-Peace!
+## Examples
+
+[Microfrontends with Vue and React](https://github.com/padcom/importmap-vue3-react-mf-example) Multiple external libraries, common library, host.
+
+To use this example cd to the `host` folder and issue the following command:
+
+```
+$ npx @padcom/npm-serve .
+```

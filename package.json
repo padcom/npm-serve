@@ -1,37 +1,37 @@
 {
- "name": "@padcom/npm-serve",
- "version": "2.0.0",
- "author": "Matthias Hryniszak <padcom@gmail.com>",
- "license": "Apache-2.0",
- "type": "module",
- "main": "docs/importmap.js",
- "keywords": [
-  "microfrontend",
-  "microfrontends"
- ],
- "repository": {
-  "type": "git",
-  "url": "https://github.com/padcom/npm-serve"
- },
- "bugs": {
-  "url": "https://github.com/padcom/npm-serve/issues"
- },
- "funding": {
-  "type": "patreon",
-  "url": "https://www.patreon.com/padcom"
- },
- "bin": {
-  "npm-serve": "index.mjs"
- },
- "scripts": {
-  "start": "node index.mjs --loglevel trace docs",
-  "prepublishOnly": "npm install"
- },
- "dependencies": {
-  "chalk": "^5.0.1",
-  "mime": "^3.0.0",
-  "minimist": "^1.2.6",
-  "semver": "^7.3.7",
-  "tar-stream": "^2.2.0"
- }
+  "name": "@padcom/npm-serve",
+  "version": "2.0.0",
+  "author": "Matthias Hryniszak <padcom@gmail.com>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "docs/importmap.js",
+  "keywords": [
+    "microfrontend",
+    "microfrontends"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/padcom/npm-serve"
+  },
+  "bugs": {
+    "url": "https://github.com/padcom/npm-serve/issues"
+  },
+  "funding": {
+    "type": "patreon",
+    "url": "https://www.patreon.com/padcom"
+  },
+  "bin": {
+    "npm-serve": "index.mjs"
+  },
+  "scripts": {
+    "start": "node index.mjs --loglevel trace docs",
+    "prepublishOnly": "npm install"
+  },
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "mime": "^3.0.0",
+    "minimist": "^1.2.6",
+    "semver": "^7.3.7",
+    "tar-stream": "^2.2.0"
+  }
 }
