@@ -6,7 +6,6 @@ const {
   unloadStylesheetFromLibrary,
 } = (() => {
   const { libraries, config } = loadImportmapTemplates()
-  console.log('config', config)
   if (config.overrides) applyOverridesFromQueryString(libraries)
   saveImportmap(createImportmap(libraries))
 
