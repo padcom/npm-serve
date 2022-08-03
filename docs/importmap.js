@@ -197,7 +197,7 @@ const {
         const url = new URL(override)
         library.isDevelopment = url.hostname === 'localhost'
         library.cdn = url.origin
-        library.main = url.pathname.slice(1)
+        library.main = url.pathname.slice(1) || library.main
         library.version = ''
       } else {
         library.version = override
