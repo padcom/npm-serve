@@ -454,63 +454,6 @@ async function servePacket(packet, req, res) {
 }
 
 /**
- * Substitute the packages given in query string with the new values.
- *
- * For local development servr substitutions:
- *   1. replace https://unpkg.com/{package}{@version}{path} with http://localhost:2999{path}
- *
- * https://unpkg.com/@padcom/mf-test-common + @padcom/mf-test-common=http://localhost:2999
- *   http://localhost:2999
- * https://unpkg.com/@padcom/mf-test-common/dist/index.js + @padcom/mf-test-common=http://localhost:2999
- *   http://localhost:2999/dist/index.js
- * https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=http://localhost:2999
- *   http://localhost:2999/dist/index.js*
- *
- * For version changes:
- *   1. replace https://unpkg.com/${package}{@version}{path} with /package/${package}@{version}{path}
- *
- * https://unpkg.com/@padcom/mf-test-common@0/dist/index.js + @padcom/mf-test-common=0.0.5
- *   /package/@padcom/mf-test-common@0.0.5/dist/index.js
- * https://unpkg.com/@padcom/mf-test-common@0/dist/style.css + @padcom/mf-test-common=0.0.5
- *   /package/@padcom/mf-test-common@0.0.5/dist/style.css
- * https://unpkg.com/@padcom/mf-test-common/dist/style.css + @padcom/mf-test-common=0.0.5
- *   /package/@padcom/mf-test-common@0.0.5/dist/style.css
- *
- * @param {IncomingMessage} req request
- * @param {String} content original content as it was read from disk
- */
-function processSubstitutes(req, content) {
-  const source = req.headers.referer ? req.headers.referer : 'x://x/' + req.url
-  const substitutions = new URL(source).searchParams
-
-  substitutions.forEach((value, name) => {
-    if (value.startsWith('http')) {
-      const rx = /(https:\/\/unpkg\.com)\/(.+)(['"`])/g
-      content = content.replaceAll(rx, (match, host, path, ending) => {
-        const parsed = new LocationParser().parse(path)
-        const parsedName = parsed.scope ? `${parsed.scope}/${parsed.name}` : parsed.name
-        const specified = new URL(value)
-        specified.pathname = parsed.path ? `/${parsed.path}` : path
-
-        return name === parsedName ? `${specified.toString()}${ending}` : match
-      })
-    } else {
-      const rx = /(https:\/\/unpkg\.com)\/(.+)(['"`])/g
-      content = content.replaceAll(rx, (match, host, path, ending) => {
-        const parsed = new LocationParser().parse(path)
-        const parsedName = parsed.scope ? `${parsed.scope}/${parsed.name}` : parsed.name
-        const version = value ? `@${value}` : ''
-        const parsedPath = parsed.path ? `/${parsed.path}` : ''
-
-        return name === parsedName ? `/package/${parsedName}${version}${parsedPath}${ending}` : match
-      })
-    }
-  })
-
-  return content.replaceAll('https://unpkg.com', '/package')
-}
-
-/**
  * Serve a static file with substitutions
  *
  * @param {IncomingMessage} req request
@@ -531,9 +474,9 @@ async function serveFile(req, res) {
     } else {
       res.setHeader('etag', await getETagFor(filename))
       let content = (await readFile(filename)).toString()
-      if (['text/html', 'application/javascript'].includes(contentType)) {
-        content = processSubstitutes(req, content)
-      }
+      // if (['text/html', 'application/javascript'].includes(contentType)) {
+      //   content = processSubstitutes(req, content)
+      // }
       res.write(content)
     }
   } else {

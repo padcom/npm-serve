@@ -1,22 +1,15 @@
 import { createApp } from 'vue'
 import { events } from '@padcom/mf-test-common'
-import {
-  initialize,
-  isLibraryRegistered, getLibraryMetadata,
-  registerLibraryStylesheet, loadStylesheetsFromLibrary,
-  unloadStylesheetFromLibrary
-} from '@padcom/npm-serve'
 
 async function start(root, library) {
-  if (!isLibraryRegistered(library)) throw new Error('Unknown library', library)
   library = getLibraryMetadata(library)
 
-  console.time('[HOST] Starting microfrontend ' + library.npm.fullname + ' took')
+  console.time('[HOST] Starting microfrontend ' + library.fullname + ' took')
 
-  loadStylesheetsFromLibrary(library)
+  loadStylesheetsFromLibrary(library.fullname)
 
-  console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
-  const { start } = await import(library.npm.fullname)
+  console.log(`[HOST] Dynamically importing ${library.fullname} exports...`)
+  const { start } = await import(library.fullname)
   console.log('[HOST] Exports loaded:')
   console.log('[HOST] > start =', start)
   console.log('')
@@ -26,7 +19,7 @@ async function start(root, library) {
   console.log('[HOST] app =', app)
   console.log('')
 
-  console.timeEnd('[HOST] Starting microfrontend ' + library.npm.fullname + ' took')
+  console.timeEnd('[HOST] Starting microfrontend ' + library.fullname + ' took')
 
   return app
 }
@@ -34,21 +27,20 @@ async function start(root, library) {
 const APPS = {}
 
 async function startApp(root, library) {
-  if (!isLibraryRegistered(library)) throw new Error('Unknown library', library)
   library = getLibraryMetadata(library)
 
-  if (APPS[library.npm.fullname]) {
-    unloadStylesheetFromLibrary(library)
-    APPS[library.npm.fullname].app.unmount()
-    delete APPS[library.npm.fullname]
+  if (APPS[library.fullname]) {
+    unloadStylesheetFromLibrary(library.fullname)
+    APPS[library.fullname].app.unmount()
+    delete APPS[library.fullname]
     return null
   } else {
-    console.time('[HOST] Starting application ' + library.npm.fullname + ' took')
+    console.time('[HOST] Starting application ' + library.fullname + ' took')
 
-    loadStylesheetsFromLibrary(library)
+    loadStylesheetsFromLibrary(library.fullname)
 
-    console.log(`[HOST] Dynamically importing ${library.npm.fullname} exports...`)
-    const { App } = await import(library.npm.fullname)
+    console.log(`[HOST] Dynamically importing ${library.fullname} exports...`)
+    const { App } = await import(library.fullname)
     console.log('[HOST] Exports loaded:')
     console.log('[HOST] > App =', App)
     console.log('')
@@ -59,9 +51,11 @@ async function startApp(root, library) {
     console.log('[HOST] app =', app)
     console.log('')
 
-    console.timeEnd('[HOST] Starting application ' + library.npm.fullname + ' took')
+    console.timeEnd('[HOST] Starting application ' + library.fullname + ' took')
 
-    APPS[library.npm.fullname] = { app }
+    APPS[library.fullname] = { app }
+
+    console.log('APPS', APPS)
 
     return app
   }
@@ -105,17 +99,10 @@ async function main() {
   console.timeEnd('[HOST] System initialized.')
 }
 
-initialize()
-
 // Vue.js and React require this (simulates dotenv)
 globalThis.process = { env: { NODE_ENV: 'development' } }
 // Vue.js requires this (silents console warnings)
 globalThis.__VUE_OPTIONS_API__ = false
 globalThis.__VUE_PROD_DEVTOOLS__ = false
-
-registerLibraryStylesheet('@padcom/mf-test-library3', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library5', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library6', 'dist/style.css')
-registerLibraryStylesheet('@padcom/mf-test-library7', 'dist/style.css')
 
 main()
