@@ -46,7 +46,7 @@ const {
       const cdn = library.cdn || config.cdn
       const fullname = library.fullname
       const version = library.version ? `@${library.version}` : ''
-      return `${cdn}${fullname}${version}/`
+      return `${cdn}${fullname}${version}`
     }
   }
 
