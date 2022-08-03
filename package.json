@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "main": "docs/importmap.js",
+  "types": "docs/types.d.ts",
   "keywords": [
     "microfrontend",
     "microfrontends"
