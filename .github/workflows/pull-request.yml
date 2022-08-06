@@ -3,10 +3,16 @@ name: build-and-publish-pull_request
 on:
   pull_request
 
+env:
+  ACTIONS_RUNNER_DEBUG: true
+
 jobs:
   publish:
+    if: ${{ !contains(github.event, 'Release') }}
     runs-on: ubuntu-latest
     steps:
+      - run: echo "${{ github.event.pull_request.head.label }}"
+      - run: echo "${{ github.event.pull_request.base }}"
       - uses: actions/checkout@v3
       - name: Use Node.js 18
         uses: actions/setup-node@v3
@@ -24,5 +30,6 @@ jobs:
           echo ${GITHUB_ACTOR}
           echo ${GITHUB_ACTION}
           echo ${GITHUB_REPOSITORY}
+          echo "${{github.event.head_commit.message}}"
       - name: Increment version
         run: npx @padcom/semver-inc@latest ${GITHUB_HEAD_REF}
