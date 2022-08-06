@@ -23,3 +23,5 @@ jobs:
           echo ${GITHUB_ACTOR}
           echo ${GITHUB_ACTION}
           echo ${GITHUB_REPOSITORY}
+      - name: Increment version
+        run: npx @padcom/semver-inc@latest ${GITHUB_BASE_REF}
