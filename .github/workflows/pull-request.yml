@@ -19,8 +19,9 @@ jobs:
           echo ${NODE_AUTH_TOKEN}
           echo ${GITHUB_REF}
           echo ${GITHUB_BASE_REF}
+          echo ${GITHUB_REF_NAME}
           echo ${GITHUB_ACTOR}
           echo ${GITHUB_ACTION}
           echo ${GITHUB_REPOSITORY}
       - name: Increment version
-        run: npx @padcom/semver-inc@latest ${GITHUB_BASE_REF}
+        run: npx @padcom/semver-inc@latest ${GITHUB_REF_NAME}
