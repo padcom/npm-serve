@@ -15,9 +15,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Echo variables
-        run: echo ${NODE_AUTH_TOKEN}
-        run: echo ${GITHUB_REF}
-        run: echo ${GITHUB_BASE_REF}
-        run: echo ${GITHUB_ACTOR}
-        run: echo ${GITHUB_ACTION}
-        run: echo ${GITHUB_REPOSITORY}
+        run: |
+          echo ${NODE_AUTH_TOKEN}
+          echo ${GITHUB_REF}
+          echo ${GITHUB_BASE_REF}
+          echo ${GITHUB_ACTOR}
+          echo ${GITHUB_ACTION}
+          echo ${GITHUB_REPOSITORY}
