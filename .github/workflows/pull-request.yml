@@ -1,0 +1,35 @@
+name: build-and-publish-pull_request
+
+on:
+  pull_request
+
+env:
+  ACTIONS_RUNNER_DEBUG: true
+
+jobs:
+  publish:
+    if: ${{ !contains(github.event, 'Release') }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ github.event.pull_request.head.label }}"
+      - run: echo "${{ github.event.pull_request.base }}"
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: Echo variables
+        run: |
+          echo ${NODE_AUTH_TOKEN}
+          echo ${GITHUB_REF}
+          echo ${GITHUB_BASE_REF}
+          echo ${GITHUB_REF_NAME}
+          echo ${GITHUB_HEAD_REF}
+          echo ${GITHUB_ACTOR}
+          echo ${GITHUB_ACTION}
+          echo ${GITHUB_REPOSITORY}
+          echo "${{github.event.head_commit.message}}"
+      - name: Increment version
+        run: npx @padcom/semver-inc@latest ${GITHUB_HEAD_REF}
