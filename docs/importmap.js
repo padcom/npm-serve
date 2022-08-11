@@ -7,6 +7,7 @@ const {
 } = (() => {
   const { libraries, config } = loadImportmapTemplates()
   if (config.overrides) applyOverridesFromQueryString(libraries)
+  if (config.polyfills) polyfill(config.polyfills)
   saveImportmap(createImportmap(libraries))
 
   return { isLibraryRegistered, getLibraryMetadata, getLibraryRoot, loadStylesheetsFromLibrary, unloadStylesheetFromLibrary }
@@ -221,12 +222,29 @@ const {
   }
 
   /**
+   * Adds a script to the page
+   */
+  function script(type = 'module', src = null, text = null) {
+    const script = document.createElement('script')
+    if (type) script.type = type
+    if (src) script.src = src
+    if (text) script.text = text
+    document.head.insertAdjacentElement('beforeend', script)
+  }
+
+  /**
+   * Add polyfills
+   */
+  function polyfill(polyfills) {
+    if (polyfills === true) polyfills = 'https://ga.jspm.io/npm:es-module-shims@1.5.14/dist/es-module-shims.js'
+    if (!Array.isArray(polyfills)) polyfills = [ polyfills ]
+    polyfills.forEach(polyfill => script(null, polyfill))
+  }
+
+  /**
    * Save importmap to the DOM
    */
   function saveImportmap(importmap) {
-    const script = document.createElement('script')
-    script.type = 'importmap'
-    script.text = JSON.stringify(importmap)
-    document.head.insertAdjacentElement('beforeend', script)
+    script('importmap', null, JSON.stringify(importmap))
   }
 })()
