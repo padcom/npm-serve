@@ -26,7 +26,8 @@
   },
   "scripts": {
     "start": "node index.mjs --loglevel trace docs",
-    "prepublishOnly": "npm install"
+    "build": "minify docs/importmap.js > docs/importmap.min.js",
+    "prepublishOnly": "npm install && npm run build"
   },
   "dependencies": {
     "chalk": "^5.0.1",
@@ -34,5 +35,8 @@
     "minimist": "^1.2.6",
     "semver": "^7.3.7",
     "tar-stream": "^2.2.0"
+  },
+  "devDependencies": {
+    "minify": "^9.1.0"
   }
 }
