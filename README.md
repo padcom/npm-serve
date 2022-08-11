@@ -9,7 +9,7 @@ File and npm package server.
 Issue the following command to use it:
 
 ```
-$ npx @padcom/npm-serve .
+$ npx @padcom/npm-serve@latest .
 ```
 
 or if you're a [Docker](https://www.docker.com/) fan:
@@ -36,7 +36,8 @@ $ docker run --rm -it \
   ],
   "config": {
     "cdn": "/package/",
-    "overrides": true
+    "overrides": true,
+    "polyfills": true
   }
 }
 </script>
@@ -268,6 +269,40 @@ When you want to [deploy a version for a different `tag`](https://docs.npmjs.com
 
 ```
 $ npm publish --tag beta
+```
+
+## Polyfilling missing features
+
+Currently, at the time of writing, most of the browsers based on webkit do support ES modules and importmaps. However, not all of them do. For that reason there is a polyfill that can be automatically loaded. That polyfill contains feature detection code so it will only be used in the event that the code runs in an environment that doesn't support importmaps natively.
+
+To enable polyfills add `"polyfills": true` to the `"config": { ... }` section like so:
+
+```
+  <script type="libraries">
+    {
+      "libraries": [ ... ],
+      "config": {
+        ...
+        "polyfills": true
+      }
+    }
+  </script>
+```
+
+Alternatively, if you'd like to customize the default polyfill URL or add more polyfills the `"polyfills" key can take either a string (location of the polyfill) or an array of strings (array of URLs containing polyfills):
+
+```
+  <script type="libraries">
+    {
+      "libraries": [ ... ],
+      "config": {
+        ...
+        "polyfills": [
+          'https://unpkg.com/es-module-shims/dist/es-module-shims.js'
+        ]
+      }
+    }
+  </script>
 ```
 
 ## Versioning
