@@ -23,6 +23,9 @@ args.s = args.storage = args.s || args.storage || './packages'
 args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.L = args.loglevel = args.L || args.loglevel || 'info'
 args.documentRoot = args._[0] || '.'
+args.prefix = args.prefix || '/packages/'
+if (!args.prefix.startsWith('/')) args.prefix = '/' + args.prefix
+if (!args.prefix.endsWith('/')) args.prefix = args.prefix + '/'
 
 const print = args.quiet ? () => {} : console.log.bind(console)
 const printalws = console.log.bind(console)
@@ -423,7 +426,7 @@ async function servePacket(packet, req, res) {
     if (isDefaultRequest) {
       res.statusCode = 302
       res.setHeader('access-control-allow-origin', '*')
-      res.setHeader('location', `/package/${scope}/${name}@${version}/${path}`)
+      res.setHeader('location', `${args.prefix}${scope}/${name}@${version}/${path}`)
     } else {
       if (!exists(filename)) {
         await download(location, filename)
@@ -492,9 +495,9 @@ const server = createServer(async (req, res) => {
 
   let url = req.url
   if (url === '/') url = '/index.html'
-  if (!url.startsWith('/package/')) {
+  if (!url.startsWith(args.prefix)) {
     await serveFile(req, res, url)
-  } else if (url.length < '/package/ '.length) {
+  } else if (url.length < (args.prefix + ' ').length) {
     res.write('Invalid packet specification')
   } else {
     const packet = url.split('/').slice(2).join('/')
@@ -505,6 +508,7 @@ const server = createServer(async (req, res) => {
 
 const listener = server.listen(args.port, () => {
   print('Server listening on ', listener.address())
+  print('  * configured prefix for packages: ', args.prefix)
   print('  * configured storage: ', args.storage)
   print('  * fetching packages from: ', args.registry)
   print('  * serving static files from: ', args.documentRoot)
