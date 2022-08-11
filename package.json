@@ -26,7 +26,7 @@
   },
   "scripts": {
     "start": "node index.mjs --loglevel trace docs",
-    "build": "minify docs/importmap.js > docs/importmap.min.js",
+    "build": "cd docs && terser importmap.js -o importmap.min.js -cm --source-map \"url='importmap.min.js.map'\"",
     "prepublishOnly": "npm install && npm run build"
   },
   "dependencies": {
@@ -37,6 +37,6 @@
     "tar-stream": "^2.2.0"
   },
   "devDependencies": {
-    "minify": "^9.1.0"
+    "terser": "^5.14.2"
   }
 }
