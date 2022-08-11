@@ -33,7 +33,7 @@ const printalws = console.log.bind(console)
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
   printalws(`usage:`)
-  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [document_root] [-q]`)
+  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [document_root] [-q]`)
   printalws(`  ${pkg.name} -V | --version # show program version and exit`)
   printalws(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
@@ -477,9 +477,6 @@ async function serveFile(req, res) {
     } else {
       res.setHeader('etag', await getETagFor(filename))
       let content = (await readFile(filename)).toString()
-      // if (['text/html', 'application/javascript'].includes(contentType)) {
-      //   content = processSubstitutes(req, content)
-      // }
       res.write(content)
     }
   } else {
