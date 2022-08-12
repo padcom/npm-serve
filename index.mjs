@@ -16,16 +16,32 @@ import semver from 'semver'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import chalk from 'chalk'
 
-const args = minimist(process.argv.slice(2))
-args.q = args.quiet = args.q || args.quiet || false
-args.p = args.port = args.p || args.port || 2998
-args.s = args.storage = args.s || args.storage || './packages'
-args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
-args.L = args.loglevel = args.L || args.loglevel || 'info'
-args.C = args.cors = args.C || args.cors || false
+const args = minimist(process.argv.slice(2), {
+  boolean: [ 'quiet', 'cors' ],
+  alias: {
+    'help': 'h',
+    'quiet': 'q',
+    'cors': 'C',
+    'port': 'p',
+    'storage': 's',
+    'registry': 'r',
+    'loglevel': 'L',
+    'maxage': 'max-age',
+  },
+  default: {
+    help: false,
+    quiet: false,
+    port: 2998,
+    storage: './packages',
+    registry: 'https://registry.npmjs.org',
+    prefix: '/package/',
+    loglevel: 'info',
+    maxage: 30,
+    cors: false,
+  },
+})
+
 args.documentRoot = args._[0] || '.'
-args.maxage = args.maxage || 30
-args.prefix = args.prefix || '/packages/'
 if (!args.prefix.startsWith('/')) args.prefix = '/' + args.prefix
 if (!args.prefix.endsWith('/')) args.prefix = args.prefix + '/'
 
@@ -35,7 +51,7 @@ const printalws = console.log.bind(console)
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
   printalws(`usage:`)
-  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [document_root] [-q] [-C|--cors]`)
+  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [-q||--quiet] [-C|--cors] [document_root]`)
   printalws(`  ${pkg.name} -V | --version # show program version and exit`)
   printalws(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
@@ -509,6 +525,7 @@ const server = createServer(async (req, res) => {
 
 const listener = server.listen(args.port, () => {
   print('Server listening on ', listener.address())
+  print('  * log level: ', args.loglevel)
   print('  * configured prefix for packages: ', args.prefix)
   print('  * configured storage: ', args.storage)
   print('  * fetching packages from: ', args.registry)
