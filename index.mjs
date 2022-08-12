@@ -17,7 +17,7 @@ import { IncomingMessage, ServerResponse } from 'node:http'
 import chalk from 'chalk'
 
 const args = minimist(process.argv.slice(2), {
-  boolean: [ 'quiet', 'cors' ],
+  boolean: [ 'quiet', 'cors', 'help' ],
   alias: {
     'help': 'h',
     'quiet': 'q',
