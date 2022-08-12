@@ -22,7 +22,9 @@ args.p = args.port = args.p || args.port || 2998
 args.s = args.storage = args.s || args.storage || './packages'
 args.r = args.registry = args.r || args.registry || 'https://registry.npmjs.org'
 args.L = args.loglevel = args.L || args.loglevel || 'info'
+args.C = args.cors = args.C || args.cors || false
 args.documentRoot = args._[0] || '.'
+args.maxage = args.maxage || 30
 args.prefix = args.prefix || '/packages/'
 if (!args.prefix.startsWith('/')) args.prefix = '/' + args.prefix
 if (!args.prefix.endsWith('/')) args.prefix = args.prefix + '/'
@@ -33,7 +35,7 @@ const printalws = console.log.bind(console)
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
   printalws(`usage:`)
-  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [document_root] [-q]`)
+  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [document_root] [-q] [-C|--cors]`)
   printalws(`  ${pkg.name} -V | --version # show program version and exit`)
   printalws(`  ${pkg.name} -h | --help # show help and exit`)
   process.exit(0)
@@ -434,8 +436,8 @@ async function servePacket(packet, req, res) {
         logger.debug('File', filename, 'already exists - not downloading')
       }
       res.setHeader('Content-Type', contentType)
-      res.setHeader('Access-Control-Allow-Origin', '*')
-      res.setHeader('Cache-Control', 'max-age=30')
+      if (args.cors) res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Cache-Control', `max-age=${args.maxage}`)
       if (getETagFor(filename) === req.headers['if-none-match']) {
         res.statusCode = 304
       } else {
@@ -472,6 +474,8 @@ async function serveFile(req, res) {
   const filename = normalize(`${args.documentRoot}/${path}`)
   if (exists(filename)) {
     logger.info('HTTP/1.1 GET -', filename)
+    res.setHeader('Cache-Control', `max-age=${args.maxage}`)
+    if (args.cors) res.setHeader('Access-Control-Allow-Origin', '*')
     if (getETagFor(filename) === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
@@ -509,6 +513,8 @@ const listener = server.listen(args.port, () => {
   print('  * configured storage: ', args.storage)
   print('  * fetching packages from: ', args.registry)
   print('  * serving static files from: ', args.documentRoot)
+  print('  * cache max-age: ', args.maxage)
+  print('  * cors headers enabled: ', args.cors)
   print('')
   logger.info('Server started')
 })
