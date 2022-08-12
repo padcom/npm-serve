@@ -39,6 +39,12 @@ const args = minimist(process.argv.slice(2), {
     maxage: 30,
     cors: false,
   },
+  unknown(name) {
+    if (name.startsWith('-')) {
+      console.error('error: unknown parameter:', name)
+      process.exit(1)
+    }
+  }
 })
 
 args.documentRoot = args._[0] || '.'
