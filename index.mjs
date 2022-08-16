@@ -59,9 +59,20 @@ const printalws = console.log.bind(console)
 if (args.h || args.help) {
   printalws(`@padcom/npm-serve by ${pkg.author}`)
   printalws(`usage:`)
-  printalws(`  ${pkg.name} [-s storage] [-r registry] [-p port] [-L loglevel] [--prefix prefix] [-q||--quiet] [-C|--cors] [document_root]`)
-  printalws(`  ${pkg.name} -V | --version # show program version and exit`)
-  printalws(`  ${pkg.name} -h | --help # show help and exit`)
+  printalws(`  ${pkg.name} [options] document-root\n`)
+  printalws(`options:`)
+  printalws(`  -V, --version                              # show program version and exit`)
+  printalws(`  -h, --help                                 # show help and exit`)
+  printalws(`  -q, --quiet                                # suppress program banner`)
+  printalws(`  -p, --port=2998                            # port to listen to for requests`)
+  printalws(`  -s, --storage=packages                     # location to store packages`)
+  printalws(`  -r, --registry=https://registry.npmjs.org  # upstream npm registry`)
+  printalws(`  -P, --prefix=/packages/                    # prefix for serving packages`)
+  printalws(`  -L, --log-level=info                       # log level (trace, debug, info, warn, error)`)
+  printalws(`  -C, --cors                                 # enable sending CORS headers`)
+  printalws(`  -M, --max-age=30                           # max-age header to send to the browser`)
+  printalws(`  -U, --npm-update-interval=1                # update interval for querying upstream npm registry`)
+
   process.exit(0)
 }
 
