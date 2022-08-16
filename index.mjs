@@ -26,7 +26,7 @@ const args = minimist(process.argv.slice(2), {
     'storage': 's',
     'registry': 'r',
     'loglevel': 'L',
-    'maxage': 'max-age',
+    'maxage': [ 'max-age', 'M' ],
     'npmUpdateInterval': [ 'npm-update-interval', 'U' ],
   },
   default: {
