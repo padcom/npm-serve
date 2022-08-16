@@ -21,6 +21,7 @@ const args = minimist(process.argv.slice(2), {
   alias: {
     'help': 'h',
     'quiet': 'q',
+    'version': 'V',
     'cors': 'C',
     'port': 'p',
     'storage': 's',
@@ -32,6 +33,7 @@ const args = minimist(process.argv.slice(2), {
   default: {
     help: false,
     quiet: false,
+    version: false,
     port: 2998,
     storage: './packages',
     registry: 'https://registry.npmjs.org',
