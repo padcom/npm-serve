@@ -27,6 +27,7 @@ const args = minimist(process.argv.slice(2), {
     'registry': 'r',
     'loglevel': 'L',
     'maxage': 'max-age',
+    'npmUpdateInterval': [ 'npm-update-interval', 'U' ],
   },
   default: {
     help: false,
@@ -38,6 +39,7 @@ const args = minimist(process.argv.slice(2), {
     loglevel: 'info',
     maxage: 30,
     cors: false,
+    npmUpdateInterval: 1,
   },
   unknown(name) {
     if (name.startsWith('-')) {
@@ -251,7 +253,7 @@ class CacheMetadataProvider extends MetadataProvider {
     PACKAGE_CACHE[CACHE_KEY] = {
       scope, name, metadata, location, path, timestamp: Date.now(),
       get isOutdated() {
-        return Date.now() - this.timestamp > 30 * 1000
+        return Date.now() - this.timestamp > args.npmUpdateInterval * 1000
       }
     }
 
@@ -537,6 +539,7 @@ const listener = server.listen(args.port, () => {
   print('  * fetching packages from: ', args.registry)
   print('  * serving static files from: ', args.documentRoot)
   print('  * cache max-age: ', args.maxage)
+  print('  * npm update interval: ', args.npmUpdateInterval)
   print('  * cors headers enabled: ', args.cors)
   print('')
   logger.info('Server started')
