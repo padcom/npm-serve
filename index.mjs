@@ -475,7 +475,7 @@ async function servePacket(packet, req, res) {
       res.setHeader('Content-Type', contentType)
       if (args.cors) res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Cache-Control', `max-age=${args.maxage}`)
-      if (getETagFor(filename) === req.headers['if-none-match']) {
+      if ((await getETagFor(filename)) === req.headers['if-none-match']) {
         res.statusCode = 304
       } else {
         res.setHeader('etag', await getETagFor(filename))
@@ -513,7 +513,7 @@ async function serveFile(req, res) {
     logger.info('HTTP/1.1 GET -', filename)
     res.setHeader('Cache-Control', `max-age=${args.maxage}`)
     if (args.cors) res.setHeader('Access-Control-Allow-Origin', '*')
-    if (getETagFor(filename) === req.headers['if-none-match']) {
+    if ((await getETagFor(filename)) === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
       res.setHeader('etag', await getETagFor(filename))
