@@ -67,7 +67,7 @@ if (args.h || args.help) {
   printalws(`  -p, --port=2998                            # port to listen to for requests`)
   printalws(`  -s, --storage=packages                     # location to store packages`)
   printalws(`  -r, --registry=https://registry.npmjs.org  # upstream npm registry`)
-  printalws(`  -P, --prefix=/packages/                    # prefix for serving packages`)
+  printalws(`  -P, --prefix=/package/                     # prefix for serving packages`)
   printalws(`  -L, --log-level=info                       # log level (trace, debug, info, warn, error)`)
   printalws(`  -C, --cors                                 # enable sending CORS headers`)
   printalws(`  -M, --max-age=30                           # max-age header to send to the browser`)
