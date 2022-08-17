@@ -2,3 +2,4 @@ docs/only-vue.*
 docs/index.html
 docs/main.js
 packages
+verdaccio
