@@ -25,7 +25,10 @@
     "npm-serve": "index.mjs"
   },
   "scripts": {
-    "start": "node index.mjs --loglevel trace docs",
+    "start": "npm run clean && concurrently 'npm run start:*'",
+    "clean": "rm -rf verdaccio/storage packages",
+    "start:npm-serve": "node index.mjs --loglevel trace --registry http://localhost:4873 docs",
+    "start:verdaccio": "cd verdaccio && ./start.sh",
     "build": "cd docs && terser importmap.js -o importmap.min.js -cm --source-map \"url='importmap.min.js.map'\"",
     "prepublishOnly": "npm install && npm run build"
   },
@@ -37,6 +40,7 @@
     "tar-stream": "^2.2.0"
   },
   "devDependencies": {
+    "concurrently": "^7.3.0",
     "terser": "^5.14.2"
   }
 }
