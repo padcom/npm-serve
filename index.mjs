@@ -5,7 +5,7 @@ import { dirname, extname, normalize } from 'node:path'
 import { createReadStream, createWriteStream, existsSync as exists } from 'node:fs'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import https from 'node:https'
-import { createServer } from 'http'
+import http, { createServer } from 'http'
 import zlib from 'node:zlib'
 import tar from 'tar-stream'
 import mime from 'mime'
@@ -280,8 +280,16 @@ class CacheMetadataProvider extends MetadataProvider {
 }
 
 class NPMMetadataProvider extends MetadataProvider {
+  #registry = null
+
+  constructor({ storage, registry = 'http://registry.npmjs.org' } = {}) {
+    super({ storage })
+    this.#registry = registry
+  }
+
   async fetch(name, scope = '') {
-    const metadataUrl = `http://registry.npmjs.org/${scope}/${name}`
+    const metadataUrl = `${this.#registry}${scope ? `/${scope}` : ''}/${name}`
+    logger.debug('NPM Metadata Provider - fetching', metadataUrl)
     return await fetch(metadataUrl).then(response => response.json())
   }
 
@@ -298,7 +306,17 @@ class NPMMetadataProvider extends MetadataProvider {
 class StorageMetadataProvider extends MetadataProvider {
   async fetch(name, scope = '') {
     const filename = this.getMetadataFilename(name, scope)
-    return JSON.parse(await readFile(filename))
+    const metadata = await readFile(filename).then(content => {
+      if (content.length === 0) {
+        // For some reason readFile(filename) returns an empty string. Maybe it's a node.js bug?
+        logger.warn('Unable to read', filename, '- retrying...')
+        return readFile(filename)
+      } else {
+        return content
+      }
+    })
+
+    return JSON.parse(metadata)
   }
 
   async update(cache, packet, name, scope = '') {
@@ -320,19 +338,21 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
   // TODO: this function is very complex, needs to be split into smaller pieces
   const { scope, name, path: requestedPath, version: requestedVersion } = new LocationParser().parse(packet)
   const cache = new CacheMetadataProvider({ storage })
-  const npm = new NPMMetadataProvider({ storage })
+  const npm = new NPMMetadataProvider({ storage, registry: args.registry })
   const file = new StorageMetadataProvider({ storage })
 
   const CACHE_KEY = cache.getCacheKey(name, scope)
+  const cached = () => PACKAGE_CACHE[CACHE_KEY]
   let actualVersion = ''
   let actualPath = ''
 
-  if (!PACKAGE_CACHE[CACHE_KEY]) {
+  if (!cached()) {
     const filename = file.getMetadataFilename(name, scope)
     if (exists(filename)) {
       const { version, path } = await file.update(cache, packet, name, scope)
       actualVersion = version
       actualPath = path
+      scheduleCacheRefresh(name, scope)
     } else {
       const { version, path } = await npm.update(cache, packet, name, scope)
       actualVersion = version
@@ -343,7 +363,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
     const { version, path } = cache.parse(packet, metadata)
     actualVersion = version
     actualPath = path
-    if (!PACKAGE_CACHE[CACHE_KEY].busy && PACKAGE_CACHE[CACHE_KEY].isOutdated) {
+    if (!cached().busy && cached().isOutdated) {
       scheduleCacheRefresh(name, scope)
     }
   }
@@ -387,7 +407,7 @@ async function getPacketInfo(packet, { storage = './packages' } = {}) {
 async function download(location, file) {
   logger.debug('Downloading file', location, 'to', file)
   return new Promise((resolve, reject) => {
-    https.get(location, async (res) => {
+    (location.startsWith('http:') ? http : https).get(location, async (res) => {
       if (res.statusCode !== 200) {
         reject({ code: 404, error: 'Not found' })
       } else {
@@ -449,7 +469,6 @@ function streamArchiveFile(archive, path, output) {
     const source = createReadStream(archive)
     source.on('error', reject)
 
-    logger.info(`HTTP/1.1 GET - ${archive}/${normalized}`)
     source.pipe(gunzip).pipe(extract)
   })
 }
@@ -510,18 +529,18 @@ async function serveFile(req, res) {
 
   const filename = normalize(`${args.documentRoot}/${path}`)
   if (exists(filename)) {
-    logger.info('HTTP/1.1 GET -', filename)
-    res.setHeader('Cache-Control', `max-age=${args.maxage}`)
     if (args.cors) res.setHeader('Access-Control-Allow-Origin', '*')
-    if ((await getETagFor(filename)) === req.headers['if-none-match']) {
+    res.setHeader('Cache-Control', `max-age=${args.maxage}`)
+    const etag = await getETagFor(filename)
+    if (etag === req.headers['if-none-match']) {
       res.statusCode = 304
     } else {
-      res.setHeader('etag', await getETagFor(filename))
-      let content = (await readFile(filename)).toString()
+      res.setHeader('etag', etag)
+      let content = await readFile(filename)
       res.write(content)
     }
   } else {
-    logger.warn('HTTP/1.1 GET -', filename, 'not found')
+    logger.warn(filename, 'not found')
   }
 }
 
@@ -533,6 +552,9 @@ const server = createServer(async (req, res) => {
 
   let url = req.url
   if (url === '/') url = '/index.html'
+
+  logger.info('HTTP/1.1 GET -', url)
+
   if (!url.startsWith(args.prefix)) {
     await serveFile(req, res, url)
   } else if (url.length < (args.prefix + ' ').length) {
