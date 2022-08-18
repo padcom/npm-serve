@@ -7,6 +7,7 @@ import npm from './lib/middleware.mjs'
 import { Logger } from './lib/Logger.mjs'
 
 // initialize logger
+globalThis.print = args.quiet ? () => {} : console.log.bind(console)
 globalThis.logger = new Logger(args.loglevel)
 
 // initialize application
@@ -17,8 +18,6 @@ app.use(express.static(args.documentRoot))
 
 // start listening for requests
 const listener = app.listen(args.port, () => {
-  const print = args.quiet ? () => {} : console.log.bind(console)
-
   print('Server listening on ', listener.address())
   print('  * log level: ', args.loglevel)
   print('  * configured prefix for packages: ', args.prefix)

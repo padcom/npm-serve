@@ -27,12 +27,13 @@
   "scripts": {
     "start": "npm run clean && concurrently 'npm run start:*'",
     "clean": "rm -rf verdaccio/storage packages",
-    "start:npm-serve": "node index.mjs --loglevel trace --registry http://localhost:4873 docs",
+    "start:npm-serve": "node index.mjs --L debug -U 5 --registry http://localhost:4873 docs",
     "start:verdaccio": "cd verdaccio && ./start.sh",
     "build": "cd docs && terser importmap.js -o importmap.min.js -cm --source-map \"url='importmap.min.js.map'\"",
     "prepublishOnly": "npm install && npm run build"
   },
   "dependencies": {
+    "async-lock": "^1.3.2",
     "chalk": "^5.0.1",
     "express": "^4.18.1",
     "mime": "^3.0.0",
@@ -40,6 +41,7 @@
     "tar-stream": "^2.2.0"
   },
   "devDependencies": {
+    "@types/async-lock": "^1.1.5",
     "concurrently": "^7.3.0",
     "terser": "^5.14.2"
   }
