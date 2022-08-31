@@ -5,10 +5,10 @@ const {
   loadStylesheetsFromLibrary,
   unloadStylesheetFromLibrary,
 } = (() => {
-  const { libraries, config } = loadImportmapTemplates()
+  const { libraries, imports, config } = loadImportmapTemplates()
   if (config.overrides) applyOverridesFromQueryString(libraries)
   if (config.polyfills) polyfill(config.polyfills)
-  saveImportmap(createImportmap(libraries))
+  saveImportmap(createImportmap(libraries, imports))
 
   return { isLibraryRegistered, getLibraryMetadata, getLibraryRoot, loadStylesheetsFromLibrary, unloadStylesheetFromLibrary }
 
@@ -132,6 +132,13 @@ const {
   }
 
   /**
+   * Parse imports
+   */
+  function parseImports(imports = {}) {
+    return imports || {}
+  }
+
+  /**
    * Safely parse JSON and if there are any errors returns null
    *
    * @param {String} source JSON to parse
@@ -156,14 +163,14 @@ const {
       .filter(script => script)
       .map(script => ({
         libraries: parseLibraries(script.libraries),
+        imports: parseImports(script.imports),
         config: script.config
       }))
-      .reduce((acc, script) => {
-        return {
-          libraries: [...acc.libraries, ...script.libraries ],
-          config: { ...acc.config, ...script.config },
-        }
-      }, { libraries: [] })
+      .reduce((acc, script) => ({
+        libraries: [...acc.libraries, ...script.libraries ],
+        imports: { ...acc.imports, ...script.imports },
+        config: { ...acc.config, ...script.config },
+      }), { libraries: [] })
   }
 
   /**
@@ -209,15 +216,17 @@ const {
   /**
    * Creates import map based on the given libraries
    */
-  function createImportmap(libraries) {
+  function createImportmap(libraries, imports) {
     return {
-      imports: libraries
-        .map(library => {
+      imports: {
+        ...libraries.map(library => {
           const root = getLibraryRoot(library.fullname)
           const main = library.main ? '/' + library.main : ''
           return { [library.fullname]: `${root}${main}` }
         })
-        .reduce((acc, library) => ({ ...acc, ...library }), {})
+        .reduce((acc, library) => ({ ...acc, ...library }), {}),
+        ...imports
+      }
     }
   }
 
