@@ -7,7 +7,7 @@ const {
 } = (() => {
   const { libraries, imports, config } = loadImportmapTemplates()
   if (config.overrides) applyOverridesFromQueryString(libraries)
-  if (config.polyfills) polyfill(config.polyfills)
+  if (config.polyfills && !importmapsAreSupported()) polyfill(config.polyfills)
   saveImportmap(createImportmap(libraries, imports))
 
   return { isLibraryRegistered, getLibraryMetadata, getLibraryRoot, loadStylesheetsFromLibrary, unloadStylesheetFromLibrary }
@@ -239,6 +239,10 @@ const {
     if (src) script.src = src
     if (text) script.text = text
     document.head.insertAdjacentElement('beforeend', script)
+  }
+
+  function importmapsAreSupported() {
+    return HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')
   }
 
   /**
