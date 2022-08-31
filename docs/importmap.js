@@ -5,10 +5,10 @@ const {
   loadStylesheetsFromLibrary,
   unloadStylesheetFromLibrary,
 } = (() => {
-  const { libraries, imports, config } = loadImportmapTemplates()
+  const { libraries, imports, scopes, config } = loadImportmapTemplates()
   if (config.overrides) applyOverridesFromQueryString(libraries)
-  if (config.polyfills && !importmapsAreSupported()) polyfill(config.polyfills)
-  saveImportmap(createImportmap(libraries, imports))
+  if (config.polyfills && !isImportmapSupported()) polyfill(config.polyfills)
+  saveImportmap(createImportmap(libraries, imports, scopes))
 
   return { isLibraryRegistered, getLibraryMetadata, getLibraryRoot, loadStylesheetsFromLibrary, unloadStylesheetFromLibrary }
 
@@ -139,6 +139,13 @@ const {
   }
 
   /**
+   * Parse scopes
+   */
+  function parseScopes(scopes = {}) {
+    return scopes || {}
+  }
+
+  /**
    * Safely parse JSON and if there are any errors returns null
    *
    * @param {String} source JSON to parse
@@ -164,11 +171,13 @@ const {
       .map(script => ({
         libraries: parseLibraries(script.libraries),
         imports: parseImports(script.imports),
+        scopes: parseScopes(script.scopes),
         config: script.config
       }))
       .reduce((acc, script) => ({
         libraries: [...acc.libraries, ...script.libraries ],
         imports: { ...acc.imports, ...script.imports },
+        scopes: { ...acc.scopes, ...script.scopes },
         config: { ...acc.config, ...script.config },
       }), { libraries: [] })
   }
@@ -216,7 +225,7 @@ const {
   /**
    * Creates import map based on the given libraries
    */
-  function createImportmap(libraries, imports) {
+  function createImportmap(libraries, imports, scopes) {
     return {
       imports: {
         ...libraries.map(library => {
@@ -226,7 +235,8 @@ const {
         })
         .reduce((acc, library) => ({ ...acc, ...library }), {}),
         ...imports
-      }
+      },
+      scopes,
     }
   }
 
@@ -241,7 +251,10 @@ const {
     document.head.insertAdjacentElement('beforeend', script)
   }
 
-  function importmapsAreSupported() {
+  /**
+   * Check if the importmap feature is supported by this browser
+   */
+  function isImportmapSupported() {
     return HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')
   }
 
