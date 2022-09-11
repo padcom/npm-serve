@@ -13,6 +13,14 @@ globalThis.logger = new Logger(args.loglevel)
 // initialize application
 const app = express()
 app.disable('x-powered-by')
+if (args.cors) {
+  app.use((req, res, next) => {
+    res.set('Access-Control-Allow-Private-Network', 'true')
+    res.set('Access-Control-Allow-Origin', args.corsOrigin || req.header('Origin'))
+    res.set('Access-Control-Allow-Credentials', 'true')
+    next()
+  })
+}
 app.use(args.prefix, npm(args))
 app.use(express.static(args.documentRoot))
 
