@@ -3,6 +3,7 @@
 import express from 'express'
 
 import args from './lib/cli.mjs'
+import cors from './lib/cors.mjs'
 import npm from './lib/middleware.mjs'
 import { Logger } from './lib/Logger.mjs'
 
@@ -13,14 +14,7 @@ globalThis.logger = new Logger(args.loglevel)
 // initialize application
 const app = express()
 app.disable('x-powered-by')
-if (args.cors) {
-  app.use((req, res, next) => {
-    res.set('Access-Control-Allow-Private-Network', 'true')
-    res.set('Access-Control-Allow-Origin', args.corsOrigin || req.header('Origin'))
-    res.set('Access-Control-Allow-Credentials', 'true')
-    next()
-  })
-}
+if (args.cors) app.use(cors(args))
 app.use(args.prefix, npm(args))
 app.use(express.static(args.documentRoot))
 
