@@ -80,7 +80,6 @@ async function main() {
   console.log('[HOST] Removing last app so it can be instantiated using clickme from library5')
   app.unmount()
   console.log('[HOST] App removed')
-  // await start(document.getElementById('app6'), 'http://localhost:3006/index.js', 'http://localhost:3006/style.css'),
   await start(document.getElementById('app6'), '@padcom/mf-test-library6')
   console.timeEnd('[HOST] Instantiating a microfrontend with host-provided and cached dependencies took')
 
