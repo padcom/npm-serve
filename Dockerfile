@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:18.9.0-alpine
 
 ENV NODE_NO_WARNINGS=1
 
